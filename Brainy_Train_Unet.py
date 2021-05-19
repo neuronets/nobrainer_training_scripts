@@ -63,24 +63,20 @@ model = nobrainer.models.unet(n_classes=n_classes, input_shape=(*block_shape, 1)
 optimizer = tf.keras.optimizers.Adam(learning_rate=1e-04)
 model.compile(optimizer=optimizer,loss=nobrainer.losses.dice,metrics=[nobrainer.metrics.dice, nobrainer.metrics.jaccard],)
 
-
-
 # Training Model
 steps_per_epoch = nobrainer.dataset.get_steps_per_epoch(
-    n_volumes=200,
-    volume_shape=volume_shape,
+    n_volumes=len(train_paths),
+    volume_shape=(128,128,128),
     block_shape=block_shape,
     batch_size=batch_size)
 
 steps_per_epoch
 
 validation_steps = nobrainer.dataset.get_steps_per_epoch(
-    n_volumes=100,
-    volume_shape=volume_shape,
+    n_volumes=len(evaluate_paths),
+    volume_shape=(128,128,128),
     block_shape=block_shape,
     batch_size=batch_size)
-
-validation_steps
 
 model.fit(
     dataset_train,
