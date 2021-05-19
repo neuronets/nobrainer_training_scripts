@@ -2,13 +2,13 @@
 import nobrainer
 import tensorflow as tf
 
-%---- Load sample Data--- inputs and labels 
+# Load sample Data--- inputs and labels 
 csv_of_filepaths = nobrainer.utils.get_data()
 filepaths = nobrainer.io.read_csv(csv_of_filepaths)
 train_paths = filepaths[:9]
 evaluate_paths = filepaths[9:]
 
-%---- Convert medical images to TFRecords
+# Convert medical images to TFRecords
 invalid = nobrainer.io.verify_features_labels(train_paths, num_parallel_calls=2)
 assert not invalid
 invalid = nobrainer.io.verify_features_labels(evaluate_paths)
@@ -24,7 +24,7 @@ nobrainer.tfrecord.write(
     filename_template='data/data-evaluate_shard-{shard:03d}.tfrec',
     examples_per_shard=1)
 
-% Set parameters
+# Set parameters
 n_classes = 1
 batch_size = 2
 volume_shape = (256, 256, 256)
@@ -34,7 +34,7 @@ augment = False
 shuffle_buffer_size = 10
 num_parallel_calls = 2
 
-% Create and Load Datasets for training and validation
+# Create and Load Datasets for training and validation
 dataset_train = nobrainer.dataset.get_dataset(
     file_pattern=train_pattern,
     n_classes=n_classes,
@@ -59,14 +59,14 @@ dataset_evaluate = nobrainer.dataset.get_dataset(
     num_parallel_calls=1,
 )
 
-% Compile model
+# Compile model
 model = nobrainer.models.unet(n_classes=n_classes, input_shape=(*block_shape, 1),batchnorm=True,)
 optimizer = tf.keras.optimizers.Adam(learning_rate=1e-04)
 model.compile(optimizer=optimizer,loss=nobrainer.losses.dice,metrics=[nobrainer.metrics.dice, nobrainer.metrics.jaccard],)
 
 
 
-% Training Model
+# Training Model
 steps_per_epoch = nobrainer.dataset.get_steps_per_epoch(
     n_volumes=200,
     volume_shape=volume_shape,
