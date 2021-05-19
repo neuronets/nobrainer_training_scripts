@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Mar  1 20:29:35 2021
-
-@author: aakanksha
-"""
-
 import nobrainer
 import tensorflow as tf
 from nobrainer.models.bayesian_vnet import bayesian_vnet
