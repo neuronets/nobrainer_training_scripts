@@ -1,14 +1,13 @@
-
 import nobrainer
 import tensorflow as tf
 
-# Load sample Data--- inputs and labels 
+#Load sample Data--- inputs and labels 
 csv_of_filepaths = nobrainer.utils.get_data()
 filepaths = nobrainer.io.read_csv(csv_of_filepaths)
 train_paths = filepaths[:9]
 evaluate_paths = filepaths[9:]
 
-# Convert medical images to TFRecords
+#Convert medical images to TFRecords
 invalid = nobrainer.io.verify_features_labels(train_paths, num_parallel_calls=2)
 assert not invalid
 invalid = nobrainer.io.verify_features_labels(evaluate_paths)
@@ -28,7 +27,7 @@ nobrainer.tfrecord.write(
 n_classes = 1
 batch_size = 2
 volume_shape = (256, 256, 256)
-block_shape = (64, 64, 64)
+block_shape = (128, 128, 128)
 n_epochs = None
 augment = False
 shuffle_buffer_size = 10
@@ -36,7 +35,7 @@ num_parallel_calls = 2
 
 # Create and Load Datasets for training and validation
 dataset_train = nobrainer.dataset.get_dataset(
-    file_pattern=train_pattern,
+    file_pattern="data/data-train_shard-*.tfrec",
     n_classes=n_classes,
     batch_size=batch_size,
     volume_shape=volume_shape,
@@ -48,7 +47,7 @@ dataset_train = nobrainer.dataset.get_dataset(
 )
 
 dataset_evaluate = nobrainer.dataset.get_dataset(
-    file_pattern=eval_pattern,
+    file_pattern="data/data-evaluate_shard-*.tfrec",
     n_classes=n_classes,
     batch_size=batch_size,
     volume_shape=volume_shape,
