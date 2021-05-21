@@ -1,1 +1,1 @@
-# Training_scripts for Deterministic and Bayesian Neural Networks
+# Training_scripts for Nobrainer Deep Learning Models 
