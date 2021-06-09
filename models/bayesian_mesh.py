@@ -1,7 +1,7 @@
 """
 Created on Thu Feb 20 10:08:29 2021
 
-@author: aakanksha
+@author: aakanksha (Version Adapted from the previous Nobrainer-Variational_Meshnet Model)
 """
 
 """Implementations of Bayesian neural networks."""
@@ -11,12 +11,12 @@ import tensorflow_probability as tfp
 
 from nobrainer.layers.dropout import BernoulliDropout
 from nobrainer.layers.dropout import ConcreteDropout
-from nobrainer.models.bayesian_utils import normal_prior, prior_fn_for_bayesian,divergence_fn_bayesian,default_mean_field_normal_fn
+from nobrainer.models.bayesian_utils import normal_prior
 
 tfk = tf.keras
 tfkl = tfk.layers
 tfpl = tfp.layers
-#weightnorm = tfp.layers.weight_norm.WeightNorm # This does not work with TFP ConvVariational layers, needs to be updated with TFP update 
+weightnorm = tfp.layers.weight_norm.WeightNorm # This does not work with TFP ConvVariational layers 
 tfd = tfp.distributions
 def variational_meshnet(
     n_classes,
@@ -30,19 +30,16 @@ def variational_meshnet(
     batch_size=None,
     name="variational_meshnet",
 ):
-         '''
-        Steps for full training:
-        1. Set priors, posteriors and divergence functions
-        kl_divergence_function = divergence_fn_bayesian()
-        kernel_posterior_fn = default_mean_field_normal_fn(
-            loc_initializer = tf.keras.initializers.he_normal(),
-            loc_regularizer=tf.keras.regularizers.l2(), #None
-            untransformed_scale_regularizer=tf.keras.regularizers.l2(),
-            loc_constraint= tf.keras.constraints.UnitNorm(axis = [0, 1, 2,3]), #None,
-            untransformed_scale_constraint=None) #None)
-        2. Put dropout regularizers in tf.compat.v1.variable_scope
+    """Instantiate variational MeshNet model.
 
-         '''
+    Returns
+    -------
+    Model object.
+
+    Raises
+    ------
+    ValueError if receptive field is not an allowable value.
+    """
 
     if receptive_field not in {37, 67, 129}:
         raise ValueError("unknown receptive field. Legal values are 37, 67, and 129.")
@@ -53,8 +50,8 @@ def variational_meshnet(
         x = tfpl.Convolution3DFlipout(filters,
             kernel_size=3, padding="same",dilation_rate=dilation_rate,
             kernel_prior_fn=prior_fn,
+            #activation=activation, 
             kernel_divergence_fn=kl_divergence_function, 
-	    kernel_posterior_fn = kernel_posterior_fn,
             name="layer{}/vwnconv3d".format(layer_num),)(x)
         if dropout is None:
             pass
@@ -107,8 +104,8 @@ def variational_meshnet(
 
     x = tfpl.Convolution3DFlipout(
         filters=n_classes,
-        kernel_size=1,
-	kernel_divergence_fn = None,
+        kernel_size=1, 
+        kernel_divergence_fn=None,
 	kernel_prior_fn=prior_fn,
         padding="same",
         name="classification/vwnconv3d",
