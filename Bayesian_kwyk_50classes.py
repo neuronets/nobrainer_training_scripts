@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Mar 22 13:15:33 2021
-
-@author: aakanksha
-"""
-
 import tensorflow as tf
 import nobrainer
 import glob
@@ -66,8 +58,8 @@ def get_dataset(pattern,volume_shape,batch,block_shape,n_classes,one_hot_label= 
     return dataset
 
 root_path = '/nobackup/users/aakrana/data/kwyk/' #'/nobackup/users/abizeul/kwyk/tfrecords/'
-train_pattern = root_path+'data-train_shard-000.tfrec'
-eval_pattern = root_path + 'data-evaluate_shard-000.tfrec'
+train_pattern = root_path+'data-train_shard-*.tfrec'
+eval_pattern = root_path + 'data-evaluate_shard-*.tfrec'
 
 #root_path = '/home/aakanksha/Documents/tfrecords/training/'
 #train_pattern = root_path+'data-evaluate_shard-000.tfrec'
@@ -82,7 +74,7 @@ augment = True
 shuffle_buffer_size = 1000
 num_parallel_calls = 8
 kld_cp = 1
-model_path = '/nobackup/users/aakrana/nobrainer_2/nobrainer/models/kwyk/KWYK_weights_CE_50_2.{epoch:03d}-{val_loss:.4f}.h5'
+model_path = '/KWYK_weights_CE_50.{epoch:03d}-{val_loss:.4f}.h5'
 dataset_train = get_dataset(train_pattern,
                             volume_shape, 
                             batch_size,
@@ -115,33 +107,6 @@ strategy = tf.distribute.MirroredStrategy()
 print("Number of devices: {}".format(strategy.num_replicas_in_sync))
 with strategy.scope():
     model = variational_meshnet(n_classes=n_classes, input_shape=(32, 32, 32, 1), filters=96, dropout="concrete", receptive_field=37, is_monte_carlo=True)
-    '''
-    model.load_weights('//nobackup/users/aakrana/nobrainer_2/nobrainer/models/nobrainer_spikeslab_32iso_weights.h5')
-    new_model = tf.keras.Sequential()
-    for layer in model.layers[:22]:
-        new_model.add(layer)
-    import tensorflow_probability as tfp
-    for layer in new_model.layers[:22]:
-        layer.trainable = False
-        
-    kernel_posterior_fn = tfp.layers.default_mean_field_normal_fn(
-            loc_initializer = tf.keras.initializers.he_normal(),
-            loc_regularizer=tf.keras.regularizers.l2(), #None
-            untransformed_scale_regularizer=None,
-            loc_constraint = tf.keras.constraints.UnitNorm(axis = [0, 1, 2,3]),#None,
-            untransformed_scale_constraint=None)
-    prior_fn = normal_prior(prior_std=1.0)#prior_fn_for_bayesian()
-    kld = None
-    new_model.add(tfp.layers.Convolution3DFlipout(filters=115, 
-                                kernel_size = 1, 
-                                dilation_rate= (1,1,1),
-                                padding = 'SAME',
-                                activation=tf.nn.softmax, 
-                                kernel_prior_fn=prior_fn,
-                                kernel_posterior_fn = kernel_posterior_fn,
-                                kernel_divergence_fn=kld,
-                                name="classification/Kwyk"))
-  '''
     model.compile(tf.keras.optimizers.Adam(lr=1e-03),loss=tf.keras.losses.CategoricalCrossentropy(),
         metrics=[nobrainer.metrics.generalized_dice])
 callbacks = [tf.keras.callbacks.ModelCheckpoint(model_path)]        
@@ -153,4 +118,4 @@ for e in range(1, 6):
         validation_steps=validation_steps,
         epochs=e+1,
         initial_epoch=e,callbacks=callbacks)
-model.save_weights('weights_kwyk_50_2.hdf5')
+model.save_weights('weights_kwyk_50.hdf5')
