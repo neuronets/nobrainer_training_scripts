@@ -11,6 +11,7 @@ import tensorflow.compat.v1 as tf1
 import tensorflow.compat.v2 as tf2
 tfd = tfp.distributions
 
+
 def normal_prior(prior_std):
     """Defines distributions prior for Bayesian neural network."""
 
@@ -71,6 +72,7 @@ def divergence_fn_bayesian(prior_std, examples_per_epoch):
         out = tfd.kl_divergence(q, p) - tf.reduce_sum(log_probs)
         return out / examples_per_epoch
     return divergence_fn
+
 
 
 class UpdatedCallback(Callback):
