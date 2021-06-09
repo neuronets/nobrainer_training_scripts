@@ -107,7 +107,8 @@ def variational_meshnet(
 
     x = tfpl.Convolution3DFlipout(
         filters=n_classes,
-        kernel_size=1, 
+        kernel_size=1,
+	kernel_divergence_fn = None,
 	kernel_prior_fn=prior_fn,
         padding="same",
         name="classification/vwnconv3d",
