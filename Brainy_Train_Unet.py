@@ -1,6 +1,7 @@
 import nobrainer
 import tensorflow as tf
 
+def main(config):
 #Load sample Data--- inputs and labels 
 csv_of_filepaths = nobrainer.utils.get_data()
 filepaths = nobrainer.io.read_csv(csv_of_filepaths)
@@ -86,3 +87,12 @@ model.fit(
     validation_steps=validation_steps)
 
 model.save_weights('weights_brainy_unet.hdf5')
+
+
+if __name__ == '__main__':
+	parser = argparse.ArgumentParser()
+	parser.add_argument('-config', type=str, help='Path to config YAML file.')
+	args = parser.parse_args()
+	with open(args.config, 'r') as stream:
+		config = yaml.safe_load(stream)
+	main(config)
