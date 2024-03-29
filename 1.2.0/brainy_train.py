@@ -6,7 +6,7 @@
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 09:08:29
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-03-29 09:54:22
+# @Last Modified At: 2024-03-29 10:31:56
 # @Description: This is description.
 
 import os
@@ -158,8 +158,9 @@ def main():
     if True:
         # run of the following two lines (but not both)
         # dataset_train, dataset_eval = load_sample_files()
-        dataset_train, dataset_eval = load_sample_tfrec("train"), load_sample_tfrec(
-            "eval"
+        dataset_train, dataset_eval = (
+            load_sample_tfrec("train"),
+            load_sample_tfrec("eval"),
         )
         save_freq = "epoch"
     else:
@@ -188,10 +189,10 @@ def main():
     )
 
     callbacks = [
-        callback_model_checkpoint,
+        # callback_model_checkpoint,
         callback_tensorboard,
         callback_early_stopping,
-        callback_backup,
+        # callback_backup,
     ]
 
     print("creating model")
@@ -201,6 +202,10 @@ def main():
         multi_gpu=True,
         checkpoint_filepath=f"output/{model_string}/nobrainer_ckpts",
     )
+
+    # Segmentation.init_with_checkpoints(
+    #     "unet", checkpoint_filepath=f"output/{model_string}/nobrainer_ckpts"
+    # )
 
     print("training")
     _ = bem.fit(
