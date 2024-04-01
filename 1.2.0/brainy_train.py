@@ -6,26 +6,26 @@
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 09:08:29
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-03-29 10:31:56
+# @Last Modified At: 2024-04-01 16:04:23
 # @Description: This is description.
 
 import os
+import sys
 
 # ruff: noqa: E402
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
-import tensorflow as tf
 import glob
-from nobrainer.dataset import Dataset
-import nobrainer
-
-from nobrainer.processing.segmentation import Segmentation
-from nobrainer.models import unet
-import numpy as np
-import nibabel as nib
 from datetime import datetime
-import copy
 
-NUM_GPUS = len(tf.config.list_physical_devices("GPU"))
+import nibabel as nib
+import nobrainer
+import numpy as np
+import tensorflow as tf
+from nobrainer.dataset import Dataset
+from nobrainer.models import unet
+from nobrainer.processing.segmentation import Segmentation
+
+# tf.data.experimental.enable_debug_mode()
 
 
 def main_timer(func):
@@ -117,9 +117,11 @@ def load_sample_tfrec(target: str = "train"):
 def load_custom_tfrec(target: str = "train"):
 
     if target == "train":
-        data_pattern = "/nese/mit/group/sig/data/kwyk/tfrecords/*train*000*"
+        data_pattern = "/nese/mit/group/sig/data/kwyk/tfrecords/*train*"
+        data_pattern = "/om2/scratch/Fri/hgazula/kwyk_full/*train*"
     else:
-        data_pattern = "/nese/mit/group/sig/data/kwyk/tfrecords/*eval*000*"
+        data_pattern = "/nese/mit/group/sig/data/kwyk/tfrecords/*eval*"
+        data_pattern = "/om2/scratch/Fri/hgazula/kwyk_full/*eval*"
 
     volume_shape = (256, 256, 256)
     block_shape = None
@@ -128,7 +130,6 @@ def load_custom_tfrec(target: str = "train"):
         file_pattern=data_pattern,
         volume_shape=volume_shape,
         block_shape=block_shape,
-        n_volumes=None,
     )
 
     return dataset
@@ -148,29 +149,35 @@ def get_label_count():
 
 # @main_timer
 def main():
-    print(tf.config.list_physical_devices("GPU"))
+    NUM_GPUS = len(tf.config.list_physical_devices("GPU"))
 
-    n_epochs = 10
+    if not NUM_GPUS:
+        sys.exit("GPU not found")
 
-    model_string = "bem"
+    n_epochs = 20
 
     print("loading data")
-    if True:
-        # run of the following two lines (but not both)
-        # dataset_train, dataset_eval = load_sample_files()
-        dataset_train, dataset_eval = (
-            load_sample_tfrec("train"),
-            load_sample_tfrec("eval"),
-        )
-        save_freq = "epoch"
+    if False:
+        # run one of the following two lines (but not both)
+        # the second line won't succeed unless the first one is run at least once
+
+        dataset_train, dataset_eval = load_sample_files()
+        # dataset_train, dataset_eval = (
+        #     load_sample_tfrec("train"),
+        #     load_sample_tfrec("eval"),
+        # )
+        # model_string = "bem_test"
+        # save_freq = "epoch"
     else:
         dataset_train, dataset_eval = (
             load_custom_tfrec("train"),
             load_custom_tfrec("eval"),
         )
-        save_freq = 100
+        model_string = "bem4"
+        save_freq = 250
 
-    dataset_train.repeat(n_epochs).shuffle(1).batch(NUM_GPUS)
+    dataset_train.shuffle(NUM_GPUS).batch(NUM_GPUS)
+    dataset_eval.map_labels()
 
     print("creating callbacks")
     callback_model_checkpoint = tf.keras.callbacks.ModelCheckpoint(
@@ -189,10 +196,10 @@ def main():
     )
 
     callbacks = [
-        # callback_model_checkpoint,
+        callback_model_checkpoint,
         callback_tensorboard,
         callback_early_stopping,
-        # callback_backup,
+        callback_backup,
     ]
 
     print("creating model")
@@ -202,10 +209,6 @@ def main():
         multi_gpu=True,
         checkpoint_filepath=f"output/{model_string}/nobrainer_ckpts",
     )
-
-    # Segmentation.init_with_checkpoints(
-    #     "unet", checkpoint_filepath=f"output/{model_string}/nobrainer_ckpts"
-    # )
 
     print("training")
     _ = bem.fit(
