@@ -6,8 +6,10 @@
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 09:08:29
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-04-01 16:04:23
-# @Description: This is description.
+# @Last Modified At: 2024-04-01 21:01:34
+# @Description:
+#   1. Code to train brainy (unet) on kwyk dataset.
+#   2. binary segmentation is used in this model.
 
 import os
 import sys
@@ -177,7 +179,6 @@ def main():
         save_freq = 250
 
     dataset_train.shuffle(NUM_GPUS).batch(NUM_GPUS)
-    dataset_eval.map_labels()
 
     print("creating callbacks")
     callback_model_checkpoint = tf.keras.callbacks.ModelCheckpoint(
