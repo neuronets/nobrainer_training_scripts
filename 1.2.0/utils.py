@@ -1,7 +1,9 @@
 import csv
+import subprocess
 from datetime import datetime
 
 __all__ = ["main_timer", "_read_csv"]
+
 
 def main_timer(func):
     """Decorator to time any function"""
@@ -18,6 +20,19 @@ def main_timer(func):
         return result
 
     return function_wrapper
+
+
+# https://stackoverflow.com/questions/14989858/get-the-current-git-hash-in-a-python-script
+def get_git_revision_hash() -> str:
+    return subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("ascii").strip()
+
+
+def get_git_revision_short_hash() -> str:
+    return (
+        subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
+        .decode("ascii")
+        .strip()
+    )
 
 
 def _read_csv(filepath, skip_header=True, delimiter=","):
