@@ -6,7 +6,7 @@
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 09:08:29
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-04-03 07:24:42
+# @Last Modified At: 2024-04-12 21:55:23
 # @Description:
 #   1. Code to train brainy (unet) on kwyk dataset.
 #   2. binary segmentation is used in this model.
@@ -41,10 +41,16 @@ def load_custom_tfrec(
 ):
     if target == "train":
         # data_pattern = "/nese/mit/group/sig/data/kwyk/tfrecords/*train*"
-        data_pattern = "/om2/scratch/Fri/hgazula/kwyk_full/*train*"
+        data_pattern = "/om2/user/hgazula/kwyk_records/kwyk_eighth/*train*00*"
+        data_pattern = (
+            "/om2/user/hgazula/nobrainer_training_scripts/1.2.0/data/binseg/*train*"
+        )
     else:
         # data_pattern = "/nese/mit/group/sig/data/kwyk/tfrecords/*eval*"
-        data_pattern = "/om2/scratch/Fri/hgazula/kwyk_full/*eval*"
+        data_pattern = "/om2/user/hgazula/kwyk_records/kwyk_eighth/*eval*01*"
+        data_pattern = (
+            "/om2/user/hgazula/nobrainer_training_scripts/1.2.0/data/binseg/*eval*"
+        )
 
     volume_shape = (256, 256, 256)
     block_shape = None
@@ -104,9 +110,9 @@ def main():
     if not NUM_GPUS:
         sys.exit("GPU not found")
 
-    n_epochs = 20
-    n_classes = 6
-    output_dirname = "brainy_mc6"
+    n_epochs = 2
+    n_classes = 50
+    output_dirname = "brainy_mc50"
 
     label_map = label_mapping.get_label_mapping(n_classes)
 
@@ -116,8 +122,8 @@ def main():
         load_custom_tfrec(target="eval", n_classes=n_classes, label_mapping=label_map),
     )
 
-    dataset_train.shuffle(NUM_GPUS).batch(NUM_GPUS)
-    dataset_eval.batch(NUM_GPUS)
+    dataset_train = dataset_train.shuffle(NUM_GPUS).batch(NUM_GPUS)
+    dataset_eval = dataset_eval.batch(NUM_GPUS)
 
     callbacks = get_callbacks(output_dirname=output_dirname, gpu_names=gpu_names)
 

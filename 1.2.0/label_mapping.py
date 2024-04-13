@@ -6,7 +6,7 @@
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-04-03 06:37:51
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-04-03 06:40:00
+# @Last Modified At: 2024-04-12 16:37:59
 # @Description:
 # 1. Script to map freesurfer labels to 0-n_classes-1 (segmentation labels).
 # 2. Adapted from the label_mapping.py script written by previous authors.
@@ -47,8 +47,11 @@ def get_label_mapping(n_classes: int) -> Dict[int, int]:
         1. Add option to remove the unknown class from the mapping.
         2. Add path to label mapping file.
     """
-    if n_classes not in [6, 50, 115]:
+    if n_classes not in [1, 2, 6, 50, 115]:
         raise NotImplementedError
+    
+    if n_classes in [1, 2]:
+        return None
 
     label_file = os.path.join(PRJCT_DIR, "csv-files", LABEL_FILES[n_classes])
     print(f"Using label mapping file: {label_file}")
