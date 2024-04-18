@@ -6,7 +6,7 @@
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 20:19:47
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-04-17 22:24:58
+# @Last Modified At: 2024-04-17 23:25:14
 # @Description: Create tfrecords of kwyk data
 
 import glob
@@ -32,13 +32,6 @@ def setup_logging(log_file="script.log"):
         filemode="a",
         level=logging.INFO,
         format="%(asctime)s - %(levelname)s - %(message)s",
-    )
-    logging.info(
-        """
-        Doing something interesting.
-        okay how about this.
-        alright.
-        """
     )
 
 
@@ -88,7 +81,7 @@ def custom_train_val_test_split(
     if test_size == 0 or val_size == 0:
         if (train_size + test_size == 1) or (train_size + val_size == 1):
             splitting = train_test_split(
-                *arrays,
+                arrays,
                 train_size=train_size,
                 shuffle=shuffle,
                 random_state=random_state,
@@ -100,7 +93,7 @@ def custom_train_val_test_split(
             )
 
     output = train_test_split(
-        *arrays, test_size=test_size, shuffle=shuffle, random_state=random_state
+        arrays, test_size=test_size, shuffle=shuffle, random_state=random_state
     )
 
     train_val_split_ratio = val_size / (1 - test_size)
@@ -152,21 +145,28 @@ def create_filepaths(path_to_data: str, sample: bool = False) -> None:
     return list(zip(feature_paths, label_paths))
 
 
-def create_tfrecords():
-    volume_filepaths = create_filepaths("/nese/mit/group/sig/data/kwyk/rawdata")[:100]
-    examples_per_shard = 25
-    output_dir = "/om2/user/hgazula/nobrainer_training_scripts/1.2.0/kwyk_test"
-    train_size, val_size, test_size = 0.85, 0.10, 0.05
+def create_kwyk_tfrecords(
+    examples_per_shard=25,
+    output_dir=os.getcwd(),
+    train_size=0.6,
+    val_size=0.2,
+    test_size=0.2,
+):
+    volume_filepaths = create_filepaths("/nese/mit/group/sig/data/kwyk/rawdata")
+    n_volumes = len(volume_filepaths)
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
     logging.info("Creating tfrecords")
     logging.info(
-        f"Sharding {len(volume_filepaths)} volumes into {examples_per_shard} examples per shard"
+        f"Sharding {n_volumes} volumes into {examples_per_shard} examples per shard"
     )
     logging.info(f"Output directory: {output_dir}")
-    logging.info(f"Train, val, test: {train_size, val_size, test_size}")
+    logging.info(f"Train, val, test (percent): {train_size, val_size, test_size}")
+    logging.info(
+        f"train, val, test (volumes): {np.array([train_size, val_size, test_size]) * n_volumes}"
+    )
 
     output_list = custom_train_val_test_split(
         volume_filepaths,
@@ -255,5 +255,11 @@ def read_tfrecord(file_pattern="train*"):
 
 if __name__ == "__main__":
     setup_logging(os.path.splitext(__file__)[0] + ".log")
-    create_tfrecords()
+    create_kwyk_tfrecords(
+        examples_per_shard=20,
+        output_dir="/om2/user/hgazula/nobrainer_training_scripts/1.2.0/kwyk_test",
+        train_size=0.85,
+        val_size=0.10,
+        test_size=0.05
+    )
     # read_tfrecord(file_pattern="/om2/user/hgazula/kwyk_records/kwyk_eighth/*eval*000*")
