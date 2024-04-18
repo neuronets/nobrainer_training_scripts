@@ -6,7 +6,7 @@
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 20:19:47
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-04-17 23:25:14
+# @Last Modified At: 2024-04-17 23:49:03
 # @Description: Create tfrecords of kwyk data
 
 import glob
@@ -164,9 +164,6 @@ def create_kwyk_tfrecords(
     )
     logging.info(f"Output directory: {output_dir}")
     logging.info(f"Train, val, test (percent): {train_size, val_size, test_size}")
-    logging.info(
-        f"train, val, test (volumes): {np.array([train_size, val_size, test_size]) * n_volumes}"
-    )
 
     output_list = custom_train_val_test_split(
         volume_filepaths,
@@ -176,6 +173,8 @@ def create_kwyk_tfrecords(
         random_state=42,
         shuffle=False,
     )
+
+    logging.info(f"train, val, test (volumes): {[len(item) for item in output_list]}")
 
     for item, shard_type in zip(output_list, ["train", "eval", "test"]):
         nobrainer.tfrecord.write(
@@ -257,9 +256,9 @@ if __name__ == "__main__":
     setup_logging(os.path.splitext(__file__)[0] + ".log")
     create_kwyk_tfrecords(
         examples_per_shard=20,
-        output_dir="/om2/user/hgazula/nobrainer_training_scripts/1.2.0/kwyk_test",
+        output_dir="/om2/scratch/Fri/hgazula/kwyk_tfrecords",
         train_size=0.85,
         val_size=0.10,
-        test_size=0.05
+        test_size=0.05,
     )
     # read_tfrecord(file_pattern="/om2/user/hgazula/kwyk_records/kwyk_eighth/*eval*000*")
