@@ -49,7 +49,7 @@ def get_label_mapping(n_classes: int) -> Dict[int, int]:
     """
     if n_classes not in [1, 2, 6, 50, 115]:
         raise NotImplementedError
-    
+
     if n_classes in [1, 2]:
         return None
 

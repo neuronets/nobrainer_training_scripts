@@ -6,7 +6,7 @@
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 20:19:47
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-04-17 23:49:03
+# @Last Modified At: 2024-04-20 07:29:58
 # @Description: Create tfrecords of kwyk data
 
 import glob
@@ -22,7 +22,7 @@ from sklearn.model_selection import train_test_split
 
 _TFRECORDS_DTYPE = "float32"
 
-tf.config.run_functions_eagerly(True)
+# tf.config.run_functions_eagerly(True)
 
 
 def setup_logging(log_file="script.log"):
