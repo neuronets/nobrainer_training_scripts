@@ -137,19 +137,26 @@ def get_color_map(n_classes=50):
         "/om2/user/hgazula/freesurfer/FreeSurferColorLUT.txt"
     )
 
+    if n_classes not in [50, 115, 6]:
+        raise ValueError("n_classes must be 6, 50, or 115")
+
     if n_classes == 115:
         df = pd.read_csv(
             "/om2/user/hgazula/nobrainer_training_scripts/csv-files/115-class-mapping.csv",
             header="infer",
         )
-    elif n_classes == 50:
+    if n_classes == 50:
         df = pd.read_csv(
             "/om2/user/hgazula/nobrainer_training_scripts/csv-files/50-class-mapping.csv",
             header="infer",
             index_col=0,
         )
-    else:
-        raise ValueError("n_classes must be 50 or 115")
+    if n_classes == 6:
+        df = pd.read_csv(
+            "/om2/user/hgazula/nobrainer_training_scripts/csv-files/6-class-mapping.csv",
+            header="infer",
+            index_col=0,
+        )
 
     df["colors"] = df["original"].apply(lambda x: fs_colors[fs_number.index(x)])
     df = df.drop_duplicates(subset="new")
@@ -157,5 +164,7 @@ def get_color_map(n_classes=50):
     my_colors = df.colors.tolist()
     my_colors[0] = [255, 255, 255]  # replacing background with white color
     cmap = mcolors.ListedColormap(np.array(my_colors) / 255)
+
+    assert len(cmap.colors) == n_classes, "Incorrect number of colors in colormap"
 
     return cmap
