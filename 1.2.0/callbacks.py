@@ -9,22 +9,22 @@ import tensorflow as tf
 from icecream import ic
 from nvitop.callbacks.keras import GpuStatsLogger
 
-from utils import get_color_map, plot_tensor_slices
+from utils import plot_tensor_slices
 
 
 class TestCallback(tf.keras.callbacks.Callback):
     def __init__(self, test_list, cmap, outdir):
         super(TestCallback, self).__init__()
         self.test_list = test_list
-        self.outdir = outdir
         self.cmap = cmap
         self.slice_dim = np.random.randint(0, 3)
-
-        if not os.path.exists(self.outdir):
-            os.makedirs(self.outdir, exist_ok=True)
+        self.outdir = outdir
 
     def on_epoch_end(self, epoch, logs=None):
         print("\nTesting model after epoch {}...".format(epoch + 1))
+
+        self.curr_outdir = os.path.join(self.outdir, f"epoch-{epoch:02d}")
+        os.makedirs(self.curr_outdir, exist_ok=True)
 
         # Select a random sample from the test dataset
         for _ in range(5):
@@ -34,13 +34,9 @@ class TestCallback(tf.keras.callbacks.Callback):
             subject_id = os.path.basename(random_sample[0]).split(os.extsep, 1)[0]
             ic(subject_id)
 
-            pred_outfile_name = os.path.join(
-                self.outdir, f"{subject_id}_epoch-{epoch:02d}_pred.png"
-            )
+            pred_outfile_name = os.path.join(self.curr_outdir, f"{subject_id}_pred.png")
             ic(pred_outfile_name)
-            true_outfile_name = os.path.join(
-                self.outdir, f"{subject_id}_epoch-{epoch:02d}_true.png"
-            )
+            true_outfile_name = os.path.join(self.curr_outdir, f"{subject_id}_true.png")
             ic(true_outfile_name)
 
             x_data = nib.load(random_sample[0]).get_fdata().astype(np.float32)
