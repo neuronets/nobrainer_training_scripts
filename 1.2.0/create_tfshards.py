@@ -6,18 +6,21 @@
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 20:19:47
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-04-20 07:29:58
+# @Last Modified At: 2024-04-25 11:32:07
 # @Description: Create tfrecords of kwyk data
 
 import glob
 import logging
 import os
 
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+
+from typing import List
 
 import nobrainer
 import numpy as np
 import tensorflow as tf
+from nobrainer.dataset import Dataset
 from sklearn.model_selection import train_test_split
 
 _TFRECORDS_DTYPE = "float32"
@@ -105,6 +108,8 @@ def custom_train_val_test_split(
             test_size=train_val_split_ratio,
             random_state=random_state,
         )
+
+        assert len(X_train) + len(X_val) + len(X_test) == len(arrays[0])
         return X_train, X_val, X_test, y_train, y_val, y_test
     else:
         X_train_temp, X_test = output
@@ -121,7 +126,7 @@ def sort_function(item):
     return int(os.path.basename(item).split("_")[1])
 
 
-def create_filepaths(path_to_data: str, sample: bool = False) -> None:
+def create_filepaths(path_to_data: str, sample: bool = False) -> List:
     """Create filepaths CSV file.
 
     Args:
@@ -143,6 +148,52 @@ def create_filepaths(path_to_data: str, sample: bool = False) -> None:
     ), "Mismatch between feature and label paths"
 
     return list(zip(feature_paths, label_paths))
+
+
+def get_record_size(path, target="eval"):
+    if target not in ["train", "eval", "test"]:
+        raise ValueError(f"Invalid target: {target}")
+
+    file_pattern = sorted(glob.glob(f"{path}*{target}*"))
+
+    if len(file_pattern) == 0:
+        return 0
+
+    first_file = file_pattern[0]
+    last_file = file_pattern[-1]
+
+    first_file_idx = os.path.splitext(os.path.basename(first_file))[0].split("-")[-1]
+    last_file_idx = os.path.splitext(os.path.basename(last_file))[0].split("-")[-1]
+
+    num_shards = int(last_file_idx) - int(first_file_idx) + 1
+
+    assert num_shards == len(file_pattern)
+
+    print(f"Num of {target} shards: {num_shards}")
+
+    print(f"{target} first file", end=" ")
+    first_dataset = Dataset.from_tfrecords(
+        file_pattern=first_file,
+        volume_shape=(256, 256, 256),
+        block_shape=None,
+        n_classes=1,
+    )
+
+    print(f"{target} last file", end=" ")
+    last_dataset = Dataset.from_tfrecords(
+        file_pattern=last_file,
+        volume_shape=(256, 256, 256),
+        block_shape=None,
+        n_classes=1,
+    )
+
+    n_vols_in_first = len([0 for _ in first_dataset.dataset])
+    n_vols_in_last = len([0 for _ in last_dataset.dataset])
+
+    total_vols = (n_vols_in_first * (num_shards - 1)) + n_vols_in_last
+    print(f"Total number of volumes in {target}: {total_vols}")
+
+    return total_vols
 
 
 def create_kwyk_tfrecords(
@@ -174,9 +225,10 @@ def create_kwyk_tfrecords(
         shuffle=False,
     )
 
-    logging.info(f"train, val, test (volumes): {[len(item) for item in output_list]}")
+    zipup = list(zip(["train", "eval", "test"], output_list))
+    logging.info([f"{key} count: {len(value)}" for key, value in zipup])
 
-    for item, shard_type in zip(output_list, ["train", "eval", "test"]):
+    for shard_type, item in zipup:
         nobrainer.tfrecord.write(
             features_labels=item,
             filename_template=f"{output_dir}/{shard_type}" + "-{shard:03d}.tfrec",
@@ -252,13 +304,22 @@ def read_tfrecord(file_pattern="train*"):
     return dataset
 
 
+def count_volumes_in_shards(path_to_dir):
+    total_vol_count = 0
+    for target in ["train", "eval", "test"]:
+        total_vol_count += get_record_size(path_to_dir, target)
+    print(total_vol_count)
+
+
 if __name__ == "__main__":
     setup_logging(os.path.splitext(__file__)[0] + ".log")
     create_kwyk_tfrecords(
         examples_per_shard=20,
-        output_dir="/om2/scratch/Fri/hgazula/kwyk_tfrecords",
-        train_size=0.85,
+        output_dir="/om2/user/hgazula/kwyk_records/kwyk_full",
+        train_size=0.90,
         val_size=0.10,
-        test_size=0.05,
+        test_size=0.0,
     )
     # read_tfrecord(file_pattern="/om2/user/hgazula/kwyk_records/kwyk_eighth/*eval*000*")
+
+    # count_volumes_in_shards("/om2/user/hgazula/kwyk_records/kwyk_full")
