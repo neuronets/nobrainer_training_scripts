@@ -6,7 +6,7 @@
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 20:19:47
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-04-25 11:32:07
+# @Last Modified At: 2024-04-26 09:07:10
 # @Description: Create tfrecords of kwyk data
 
 import glob
@@ -123,10 +123,16 @@ def custom_train_val_test_split(
 
 
 def sort_function(item):
-    return int(os.path.basename(item).split("_")[1])
+    try:
+        key = int(os.path.basename(item).split("_")[1])
+    except ValueError as e:
+        key = 0
+    return key
 
 
-def create_filepaths(path_to_data: str, sample: bool = False) -> List:
+def create_filepaths(
+    path_to_data: str, feature_string: str = "orig", label_string: str = "aseg"
+) -> List:
     """Create filepaths CSV file.
 
     Args:
@@ -137,10 +143,12 @@ def create_filepaths(path_to_data: str, sample: bool = False) -> List:
         path_to_data = "/nese/mit/group/sig/data/kwyk/rawdata"
 
     feature_paths = sorted(
-        glob.glob(os.path.join(path_to_data, "*orig*.nii.gz")), key=sort_function
+        glob.glob(os.path.join(path_to_data, f"*{feature_string}*")),
+        key=sort_function,
     )
     label_paths = sorted(
-        glob.glob(os.path.join(path_to_data, "*aseg*.nii.gz")), key=sort_function
+        glob.glob(os.path.join(path_to_data, f"*{label_string}*")),
+        key=sort_function,
     )
 
     assert len(feature_paths) == len(
