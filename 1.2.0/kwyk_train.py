@@ -23,16 +23,16 @@ from icecream import ic
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 from typing import Dict
 
-import create_tfshards
-import label_mapping
 import nobrainer
 import tensorflow as tf
-from callbacks_kwyk import TestCallback, get_callbacks
 from nobrainer.dataset import Dataset
 from nobrainer.models.bayesian_meshnet import variational_meshnet
 from nobrainer.processing.segmentation import Segmentation
 from nobrainer.volume import standardize
 
+import create_tfshards
+import label_mapping
+from callbacks_kwyk import TestCallback, get_callbacks
 from utils import get_color_map, get_git_revision_short_hash, main_timer
 
 ic.enable()
@@ -103,7 +103,7 @@ def init_device(flag: bool = False):
 
 if __name__ == "__main__":
     config = configparser.ConfigParser()
-    config.read("/om2/user/hgazula/nobrainer_training_scripts/1.2.0/config.yml")
+    config.read("/om2/user/hgazula/nobrainer_training_scripts/1.2.0/config_kwyk.yml")
 
     config = map_nested_dicts(config._sections, ast.literal_eval)
 
