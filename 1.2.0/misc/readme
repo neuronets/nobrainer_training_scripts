@@ -1,0 +1,90 @@
+----------------------------------
+    VoxelMorph Training Data
+----------------------------------
+
+This large, combined dataset was originally used in:
+
+    Anatomical Priors in Convolutional Networks for Unsupervised Biomedical Segmentation
+    Adrian V. Dalca, John Guttag, Mert R. Sabuncu
+    CVPR 2018
+
+The `cleaned` dir contains roughly 30k processed scan subdirs that each contain orig, norm, and seg
+files in:
+
+1. The original subject-space
+2. Resampled talairach-space (from FS talairach.xfm)
+3. 2D talairach-space (extracted from coronal slice 112)
+
+Each scan contains an aseg (automatic segmentation) from either FS 5.3 or 6.0. All OASIS scans and few
+others have additional samseg segmentations. All Bucker39 scans contain mseg (manual segmentation)
+files. Each scan also contains a set of simplified segmentations generated from the base segmentation
+using the following keys. It's recommended to use the 23-label segmentations when working with 2D slices.
+
+seg 4:
+    0: Unknown
+    1: Cortical-GM
+    2: Subcortical-GM
+    3: White-Matter
+    4: CSF
+
+seg 32:
+    0:  Unknown
+    1:  Left-Cerebral-White-Matter
+    2:  Left-Cerebral-Cortex
+    3:  Left-Lateral-Ventricle
+    4:  Left-Cerebellum-White-Matter
+    5:  Left-Cerebellum-Cortex
+    6:  Left-Thalamus
+    7:  Left-Caudate
+    8:  Left-Putamen
+    9:  Left-Pallidum
+    10: 3rd-Ventricle
+    11: 4th-Ventricle
+    12: Brain-Stem
+    13: Left-Hippocampus
+    14: Left-Amygdala
+    15: CSF
+    16: Left-Accumbens-area
+    17: Left-VentralDC
+    18: Left-Choroid-Plexus
+    19: Right-Cerebral-White-Matter
+    20: Right-Cerebral-Cortex
+    21: Right-Lateral-Ventricle
+    22: Right-Cerebellum-White-Matter
+    23: Right-Cerebellum-Cortex
+    24: Right-Thalamus
+    25: Right-Caudate
+    26: Right-Putamen
+    27: Right-Pallidum
+    28: Right-Hippocampus
+    29: Right-Amygdala
+    30: Right-Accumbens-area
+    31: Right-VentralDC
+    32: Right-Choroid-Plexus
+
+seg 23 (2D only - common labels in slice 112):
+    0:   Unknown
+    1:   Left-Cerebral-White-Matter
+    2:   Left-Cerebral-Cortex
+    3:   Left-Lateral-Ventricle
+    4:   Left-Thalamus
+    5:   Left-Caudate
+    6:   Left-Putamen
+    7:   Left-Pallidum
+    8:   3rd-Ventricle
+    9:   Brain-Stem
+    10:  Left-Hippocampus
+    11:  CSF
+    12:  Left-VentralDC
+    13:  Left-choroid-plexus
+    14:  Right-Cerebral-White-Matter
+    15:  Right-Cerebral-Cortex
+    16:  Right-Lateral-Ventricle
+    17:  Right-Thalamus
+    18:  Right-Caudate
+    19:  Right-Putamen
+    20:  Right-Pallidum
+    21:  Right-Hippocampus
+    22:  Right-VentralDC
+    23:  Right-choroid-plexus
+
