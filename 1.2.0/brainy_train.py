@@ -1,20 +1,23 @@
 # Copyright (c) 2024 MIT
 #
 # -*- coding:utf-8 -*-
-# @Script: brainy_train.py
+# @Script: kwyk_train.pypy
 # @Author: Harsha
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 09:08:29
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-04-20 08:04:47
+# @Last Modified At: 2024-05-09 18:23:23
 # @Description:
 #   1. Code to train brainy (unet) on kwyk dataset.
 #   2. binary segmentation is used in this model.
 #   3. updated to support multi-class segmentation
 #   4. added support for plotting predictions
 
+import ast
+import configparser
 import os
 import sys
+from pprint import pprint
 
 from icecream import ic
 
@@ -27,37 +30,60 @@ import tensorflow as tf
 from nobrainer.dataset import Dataset
 from nobrainer.models import unet
 from nobrainer.processing.segmentation import Segmentation
+from nobrainer.volume import standardize
 
 import create_tfshards
 import label_mapping
-from callbacks import TestCallback, get_callbacks
+from callbacks_kwyk import TestCallback, get_callbacks
 from utils import get_color_map, get_git_revision_short_hash, main_timer
+
+ic.enable()
+
+import collections.abc
+
+
+# https://stackoverflow.com/questions/32935232/python-apply-function-to-values-in-nested-dictionary
+def map_nested_dicts(ob, func):
+    if isinstance(ob, collections.abc.Mapping):
+        return {k: map_nested_dicts(v, func) for k, v in ob.items()}
+    else:
+        return func(ob)
+
+
+def print_config_file(filename):
+    try:
+        with open(filename, "r") as file:
+            config_data = file.read()
+            print(config_data)
+    except FileNotFoundError:
+        print(f"Config file '{filename}' not found.")
 
 
 @main_timer
 def load_custom_tfrec(
-    target: str = "train", n_classes: int = 1, label_mapping: Dict = None
+    config: Dict = None,
+    target: str = "train",
 ):
     if target not in ["train", "eval", "test"]:
         raise ValueError(f"Invalid target: {target}")
 
-    file_pattern = f"/om2/scratch/Fri/hgazula/kwyk_tfrecords/*{target}*"
-    volumes = {"train": 9757, "eval": 1148, "test": 574}
+    n_classes = config["n_classes"]
 
-    # file_pattern = f"/om2/user/hgazula/kwyk_records/kwyk_full/*{target}*"
-    # volumes = {"train": None, "eval": None}
+    label_map = label_mapping.get_label_mapping(n_classes)
 
-    # file_pattern = (
-    #     f"/om2/user/hgazula/nobrainer_training_scripts/1.2.0/data/binseg/*{target}*"
-    # )
-    # volumes = {"train": 9, "eval": 1}
+    file_pattern = f"/om2/user/hgazula/kwyk_records/kwyk_full/*{target}*"
+    volumes = {"train": 10331, "eval": 1148}
+
+    if config["debug"]:
+        file_pattern = f"/om2/user/hgazula/nobrainer-data/tfrecords/*{target}*"
+        volumes = {"train": 9, "eval": 1}
 
     dataset = Dataset.from_tfrecords(
         file_pattern=file_pattern,
-        volume_shape=(256, 256, 256),
-        block_shape=None,
+        volume_shape=config["volume_shape"],
+        block_shape=config["block_shape"],
         n_classes=n_classes,
-        label_mapping=label_mapping,
+        label_mapping=label_map,
         n_volumes=volumes[target],
     )
 
@@ -78,41 +104,73 @@ def init_device(flag: bool = False):
 
 
 if __name__ == "__main__":
+    config = configparser.ConfigParser()
+    config.read("/om2/user/hgazula/nobrainer_training_scripts/1.2.0/config_brainy.yml")
+
+    config = map_nested_dicts(config._sections, ast.literal_eval)
+
+    pprint(config)
+
+    # basic config
+    basic_config = config["basic"]
+    model_name = basic_config["model_name"]
+    n_classes = basic_config["n_classes"]
+    normalize = basic_config["normalize"]
+
+    # training config
+    train_config = config["train"]
+    n_epochs = train_config["n_epochs"]
+
+    output_dirname = f"{model_name}"
+
     print(f"Nobrainer version: {nobrainer.__version__}")
     print(f"Git commit hash: {get_git_revision_short_hash()}")
 
-    NUM_GPUS, gpu_names = init_device(flag=True)
-
-    n_epochs = 10
-    n_classes = 50
-    output_dirname = "brainy_mc50"
-
-    label_map = label_mapping.get_label_mapping(n_classes)
+    NUM_GPUS, gpu_names = init_device(flag=False)
 
     volume_filepaths = create_tfshards.create_filepaths(
-        "/nese/mit/group/sig/data/kwyk/rawdata"
+        "/nese/mit/group/sig/data/kwyk/rawdata",
+        feature_string="orig",
+        label_string="aseg",
     )
 
-    *_, test_list = create_tfshards.custom_train_val_test_split(
+    if config["basic"]["debug"]:
+        volume_filepaths = create_tfshards.create_filepaths(
+            "/om2/user/hgazula/nobrainer-data/datasets",
+            feature_string="t1",
+            label_string="aseg",
+        )
+
+    ic(len(volume_filepaths))
+
+    train_list, val_list = create_tfshards.custom_train_val_test_split(
         volume_filepaths,
-        train_size=0.85,
+        train_size=0.90,
         val_size=0.10,
-        test_size=0.05,
+        test_size=0.00,
         random_state=42,
         shuffle=False,
     )
 
-    ic("loading data")
+    print("loading data")
     dataset_train, dataset_eval = (
-        load_custom_tfrec(target="train", n_classes=n_classes, label_mapping=label_map),
-        load_custom_tfrec(target="eval", n_classes=n_classes, label_mapping=label_map),
+        load_custom_tfrec(config=basic_config, target="eval"),
+        load_custom_tfrec(config=basic_config, target="eval"),
     )
 
     dataset_train = dataset_train.shuffle(NUM_GPUS).batch(NUM_GPUS)
     dataset_eval = dataset_eval.batch(NUM_GPUS)
 
+    if normalize:
+        print("normalizing data")
+        dataset_train = dataset_train.normalize(normalizer=standardize)
+        dataset_eval = dataset_eval.normalize(normalizer=standardize)
+
     test_callback = TestCallback(
-        test_list, get_color_map(n_classes), f"output/{output_dirname}/predictions"
+        config,
+        val_list,
+        get_color_map(n_classes),
+        f"output/{output_dirname}/predictions",
     )
 
     callbacks = get_callbacks(output_dirname=output_dirname, gpu_names=gpu_names)
