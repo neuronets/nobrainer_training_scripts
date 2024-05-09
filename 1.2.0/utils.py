@@ -6,7 +6,6 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
 from ext.mindboggle.labels import extract_numbers_names_colors
 
 __all__ = [
@@ -76,14 +75,26 @@ def crop_tensor(tensor, percentile=10):
     # Crop the original tensor using the bounding box from the filtered data
     cropped_tensor = tensor[min_z : max_z + 1, min_y : max_y + 1, min_x : max_x + 1]
 
-    return cropped_tensor
+    return cropped_tensor, [min_z, max_z, min_x, max_x, min_y, max_y]
 
 
 def plot_tensor_slices(
-    tensor, slice_dim=0, cmap="viridis", crop_percentile=10, out_name=None
+    tensor,
+    slice_dim=0,
+    cmap="viridis",
+    crop_percentile=10,
+    out_name=None,
+    crop_dims=None,
 ):
     # Crop the tensor
-    cropped_tensor = crop_tensor(tensor, percentile=crop_percentile)
+    if not crop_dims:
+        cropped_tensor, [min_z, max_z, min_x, max_x, min_y, max_y] = crop_tensor(
+            tensor, percentile=crop_percentile
+        )
+        crop_dims = [min_z, max_z, min_x, max_x, min_y, max_y]
+    else:
+        [min_z, max_z, min_x, max_x, min_y, max_y] = crop_dims
+        cropped_tensor = tensor[min_z : max_z + 1, min_y : max_y + 1, min_x : max_x + 1]
 
     # Determine the dimensions of the cropped tensor
     dim0, dim1, dim2 = cropped_tensor.shape
@@ -129,7 +140,9 @@ def plot_tensor_slices(
     plt.axis("off")
     plt.tight_layout()
     plt.savefig(out_name, dpi=600)
-    plt.show()
+    # plt.show()
+
+    return crop_dims
 
 
 def get_color_map(n_classes=50):

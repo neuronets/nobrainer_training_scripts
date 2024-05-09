@@ -11,6 +11,7 @@ from nobrainer.prediction import predict
 from nobrainer.volume import standardize
 from nvitop.callbacks.keras import GpuStatsLogger
 
+import label_mapping
 from utils import plot_tensor_slices
 
 
@@ -19,9 +20,11 @@ class TestCallback(tf.keras.callbacks.Callback):
         super(TestCallback, self).__init__()
         self.test_list = test_list
         self.cmap = cmap
-        self.slice_dim = np.random.randint(0, 3)
         self.outdir = outdir
         self.config = config
+        n_classes = self.config["basic"]["n_classes"]  # 6 or 50 or 115
+        self.label_map = label_mapping.get_label_mapping(n_classes)
+        self.normalizer = standardize if self.config["basic"]["normalize"] else None
 
     def on_epoch_end(self, epoch, logs=None):
         print("\nTesting model after epoch {}...".format(epoch + 1))
@@ -39,7 +42,7 @@ class TestCallback(tf.keras.callbacks.Callback):
             self.model,
             self.config["basic"]["block_shape"],
             batch_size=1,  # TODO: batch_size should be configurable when block is implemented
-            normalizer=standardize,
+            normalizer=self.normalizer,
             n_samples=self.config["test"]["n_samples"],
             return_variance=False,
             return_entropy=False,
@@ -49,31 +52,43 @@ class TestCallback(tf.keras.callbacks.Callback):
             subject_id = os.path.basename(label).split(os.extsep, 1)[0]
             ic(subject_id)
 
-            pred_outfile_name = os.path.join(self.curr_outdir, f"{subject_id}_pred.png")
-            ic(pred_outfile_name)
-            true_outfile_name = os.path.join(self.curr_outdir, f"{subject_id}_true.png")
-            ic(true_outfile_name)
-
             y_true = nib.load(label).get_fdata().astype(np.uint)
             y_pred = prediction.get_fdata().astype(np.uint)
             y_pred[y_true == 0] = 0
 
             assert y_true.shape == y_pred.shape, f"Shape mismatch at test time"
 
-            plot_tensor_slices(
-                y_pred,
-                slice_dim=self.slice_dim,
-                cmap=self.cmap,
-                crop_percentile=10,
-                out_name=pred_outfile_name,
+            u, inv = np.unique(y_true, return_inverse=True)
+            y_true = np.array([self.label_map.get(x, 0) for x in u])[inv].reshape(
+                y_true.shape
             )
-            plot_tensor_slices(
-                y_true,
-                slice_dim=self.slice_dim,
-                cmap=self.cmap,
-                crop_percentile=10,
-                out_name=true_outfile_name,
-            )
+
+            for slice_dim, dim_name in zip(range(3), ["sagittal", "axial", "coronal"]):
+
+                pred_outfile_name = os.path.join(
+                    self.curr_outdir, f"{subject_id}_pred_{dim_name}.png"
+                )
+                true_outfile_name = os.path.join(
+                    self.curr_outdir, f"{subject_id}_true_{dim_name}.png"
+                )
+
+                crop_dims = plot_tensor_slices(
+                    y_true,
+                    slice_dim=slice_dim,
+                    cmap=self.cmap,
+                    crop_percentile=10,
+                    out_name=true_outfile_name,
+                    crop_dims=None,
+                )
+
+                plot_tensor_slices(
+                    y_pred,
+                    slice_dim=slice_dim,
+                    cmap=self.cmap,
+                    crop_percentile=10,
+                    out_name=pred_outfile_name,
+                    crop_dims=crop_dims,
+                )
 
 
 class MemoryLoggerCallback(tf.keras.callbacks.Callback):
