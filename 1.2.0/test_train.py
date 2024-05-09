@@ -6,7 +6,7 @@
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 09:08:29
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-04-01 22:15:34
+# @Last Modified At: 2024-04-26 07:59:42
 # @Description: This is description.
 
 import os
@@ -15,7 +15,6 @@ import sys
 # ruff: noqa: E402
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import glob
-from datetime import datetime
 
 import nibabel as nib
 import nobrainer
@@ -24,25 +23,12 @@ import tensorflow as tf
 from nobrainer.dataset import Dataset
 from nobrainer.models import unet
 from nobrainer.processing.segmentation import Segmentation
+from nobrainer.volume import standardize
+
+from label_mapping import get_label_mapping
+from utils import main_timer
 
 # tf.data.experimental.enable_debug_mode()
-
-
-def main_timer(func):
-    """Decorator to time any function"""
-
-    def function_wrapper(*args, **kwargs):
-        start_time = datetime.now()
-        # print(f'Start Time: {start_time.strftime("%A %m/%d/%Y %H:%M:%S")}')
-        result = func(*args, *kwargs)
-        end_time = datetime.now()
-        # print(f'End Time: {end_time.strftime("%A %m/%d/%Y %H:%M:%S")}')
-        print(
-            f"Function: {func.__name__} Total runtime: {end_time - start_time} (HH:MM:SS)"
-        )
-        return result
-
-    return function_wrapper
 
 
 def sort_function(item):
@@ -78,8 +64,7 @@ def create_filepaths(path_to_data: str, sample: bool = False) -> None:
 
 
 @main_timer
-def load_sample_files():
-
+def load_sample_files(n_classes: int = 1, label_mapping: dict = None):
     if True:
         csv_path = nobrainer.utils.get_data()
         filepaths = nobrainer.io.read_csv(csv_path)
@@ -89,20 +74,22 @@ def load_sample_files():
             out_tfrec_dir="data/binseg",
             shard_size=3,
             num_parallel_calls=None,
-            n_classes=1,
-            block_shape=(128, 128, 128),
+            n_classes=n_classes,
+            block_shape=None,
+            label_mapping=label_mapping,
         )
     return dataset_train, dataset_eval
 
 
 def load_sample_tfrec(target: str = "train"):
     volume_shape = (256, 256, 256)
-    block_shape = (128, 128, 128)
+    # block_shape = (128, 128, 128)
+    block_shape = None
 
     if target == "train":
-        data_pattern = "data/binseg/*train*"
+        data_pattern = "data/binseg/*train*000*"
     else:
-        data_pattern = "data/binseg/*eval*"
+        data_pattern = "data/binseg/*eval*000*"
 
     dataset = Dataset.from_tfrecords(
         file_pattern=data_pattern,
@@ -116,7 +103,6 @@ def load_sample_tfrec(target: str = "train"):
 
 @main_timer
 def load_custom_tfrec(target: str = "train"):
-
     if target == "train":
         data_pattern = "/nese/mit/group/sig/data/kwyk/tfrecords/*train*"
         data_pattern = "/om2/scratch/Fri/hgazula/kwyk_full/*train*"
@@ -140,7 +126,7 @@ def load_custom_tfrec(target: str = "train"):
 def get_label_count():
     label_count = []
     with open("filepaths.csv", "r") as f:
-        lines = f.readlines()[:500]
+        lines = f.readlines()
         for line in lines:
             _, label = line.strip().split(",")
             label_count.append(len(np.unique(nib.load(label).get_fdata())))
@@ -155,19 +141,23 @@ def main():
     if not NUM_GPUS:
         sys.exit("GPU not found")
 
-    n_epochs = 20
+    n_epochs = 1
+    n_classes = 50
+    label_mapping_dict = get_label_mapping(n_classes)
 
     print("loading data")
     if True:
         # run one of the following two lines (but not both)
         # the second line won't succeed unless the first one is run at least once
 
-        # dataset_train, dataset_eval = load_sample_files()
+        # dataset_train, dataset_eval = load_sample_files(
+        #     n_classes=n_classes, label_mapping=label_mapping_dict
+        # )
         dataset_train, dataset_eval = (
             load_sample_tfrec("train"),
             load_sample_tfrec("eval"),
         )
-        model_string = "test"
+        model_string = "test6"
         save_freq = "epoch"
     else:
         dataset_train, dataset_eval = (
@@ -177,7 +167,11 @@ def main():
         model_string = "test"
         save_freq = 250
 
-    dataset_train.shuffle(NUM_GPUS).batch(NUM_GPUS)
+    dataset_train = dataset_train.shuffle(NUM_GPUS).batch(NUM_GPUS)
+    dataset_eval = dataset_eval.batch(NUM_GPUS)
+
+    # callbacks = get_callbacks(output_dirname=output_dirname, gpu_names=gpu_names)
+    # callbacks.append(test_callback)
 
     print("creating callbacks")
     callback_model_checkpoint = tf.keras.callbacks.ModelCheckpoint(
@@ -210,22 +204,22 @@ def main():
         # checkpoint_filepath=f"output/{model_string}/nobrainer_ckpts",
     )
 
-    batch_size = 1
-    while True:
-        try:
-            train_copy = dataset_train
-            train_copy.dataset = dataset_train.dataset.take(batch_size)
-            train_copy.repeat(2).batch(batch_size)
-            _ = bem.fit(
-                dataset_train=train_copy,
-            )  # TODO: add a flag for summary
-            batch_size *= 2
-        except tf.errors.ResourceExhaustedError as e:
-            batch_size //= 2
-            break
-        except ValueError as e:
-            batch_size //= 2
-            break
+    # batch_size = 1
+    # while True:
+    #     try:
+    #         train_copy = dataset_train
+    #         train_copy.dataset = dataset_train.dataset.take(batch_size)
+    #         train_copy.repeat(2).batch(batch_size)
+    #         _ = bem.fit(
+    #             dataset_train=train_copy,
+    #         )  # TODO: add a flag for summary
+    #         batch_size *= 2
+    #     except tf.errors.ResourceExhaustedError as e:
+    #         batch_size //= 2
+    #         break
+    #     except ValueError as e:
+    #         batch_size //= 2
+    #         break
 
     # tf.keras.backend.clear_session()
     # try:
@@ -237,7 +231,7 @@ def main():
     # return batch_size
 
     print("Actual training")
-    dataset_train.batch(batch_size)
+    # dataset_train.batch(batch_size)
     _ = bem.fit(
         dataset_train=dataset_train,
         dataset_validate=dataset_eval,
@@ -246,6 +240,10 @@ def main():
     )
 
     print("Success")
+
+    image_path = "/nese/mit/group/sig/data/kwyk/rawdata/pac_0_orig.nii.gz"
+    out = bem.predict(image_path, normalizer=standardize)
+    print(out.shape)
 
 
 if __name__ == "__main__":
