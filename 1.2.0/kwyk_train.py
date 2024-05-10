@@ -1,12 +1,12 @@
 # Copyright (c) 2024 MIT
 #
 # -*- coding:utf-8 -*-
-# @Script: brainy_train.py
+# @Script: kwyk_train.py
 # @Author: Harsha
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 09:08:29
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-05-09 20:15:01
+# @Last Modified At: 2024-05-09 20:34:12
 # @Description:
 #   1. Code to train bayesian meshnet on kwyk dataset.
 #   2. binary segmentation is used in this model.
@@ -15,6 +15,7 @@ import ast
 import configparser
 import os
 import sys
+from argparse import ArgumentParser
 from pprint import pprint
 
 from icecream import ic
@@ -102,8 +103,12 @@ def init_device(flag: bool = False):
 
 
 if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_argument("config", type=str)
+    args = parser.parse_args()
+
     config = configparser.ConfigParser()
-    config.read("/om2/user/hgazula/nobrainer_training_scripts/1.2.0/configs/config_kwyk.yml")
+    config.read(args.config)
 
     config = map_nested_dicts(config._sections, ast.literal_eval)
 

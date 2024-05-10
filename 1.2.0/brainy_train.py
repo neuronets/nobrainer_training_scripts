@@ -6,7 +6,7 @@
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 09:08:29
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-05-09 20:13:26
+# @Last Modified At: 2024-05-09 21:02:01
 # @Description:
 #   1. Code to train brainy (unet) on kwyk dataset.
 #   2. binary segmentation is used in this model.
@@ -17,6 +17,7 @@ import ast
 import configparser
 import os
 import sys
+from argparse import ArgumentParser
 from pprint import pprint
 
 from icecream import ic
@@ -104,8 +105,12 @@ def init_device(flag: bool = False):
 
 
 if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_argument("config", type=str)
+    args = parser.parse_args()
+
     config = configparser.ConfigParser()
-    config.read("/om2/user/hgazula/nobrainer_training_scripts/1.2.0/configs/config_brainy.yml")
+    config.read(args.config)
 
     config = map_nested_dicts(config._sections, ast.literal_eval)
 
@@ -176,7 +181,7 @@ if __name__ == "__main__":
     callbacks = get_callbacks(output_dirname=output_dirname, gpu_names=gpu_names)
     callbacks.append(test_callback)
 
-    ic("creating model")
+    print("creating model")
     bem = Segmentation(
         unet,
         model_args=dict(batchnorm=True),
@@ -184,7 +189,7 @@ if __name__ == "__main__":
         checkpoint_filepath=f"output/{output_dirname}/nobrainer_ckpts",
     )
 
-    ic("training")
+    print("training")
     _ = bem.fit(
         dataset_train=dataset_train,
         dataset_validate=dataset_eval,
@@ -192,4 +197,4 @@ if __name__ == "__main__":
         callbacks=callbacks,
     )
 
-    ic("Success")
+    print("Success")

@@ -3,12 +3,12 @@
     model_name: "brainy_t1"
     seed: 42
     n_classes: 50
-    normalize: False
+    normalize: True
     volume_shape: (256, 256, 256)
-    block_shape: (128, 128, 128)
+    block_shape: (256, 256, 256)
 
 [train]
-    n_epochs: 1
+    n_epochs: 200
 
 [validation]
 
