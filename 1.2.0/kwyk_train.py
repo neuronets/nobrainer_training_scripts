@@ -1,12 +1,12 @@
 # Copyright (c) 2024 MIT
 #
 # -*- coding:utf-8 -*-
-# @Script: kwyk_train.py
+# @Script: brainy_train.py
 # @Author: Harsha
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 09:08:29
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-05-09 15:16:28
+# @Last Modified At: 2024-05-09 20:15:01
 # @Description:
 #   1. Code to train bayesian meshnet on kwyk dataset.
 #   2. binary segmentation is used in this model.
@@ -32,7 +32,7 @@ from nobrainer.volume import standardize
 
 import create_tfshards
 import label_mapping
-from callbacks_kwyk import TestCallback, get_callbacks
+from callbacks import TestCallback, get_callbacks
 from utils import get_color_map, get_git_revision_short_hash, main_timer
 
 ic.enable()
@@ -103,7 +103,7 @@ def init_device(flag: bool = False):
 
 if __name__ == "__main__":
     config = configparser.ConfigParser()
-    config.read("/om2/user/hgazula/nobrainer_training_scripts/1.2.0/config_kwyk.yml")
+    config.read("/om2/user/hgazula/nobrainer_training_scripts/1.2.0/configs/config_kwyk.yml")
 
     config = map_nested_dicts(config._sections, ast.literal_eval)
 
