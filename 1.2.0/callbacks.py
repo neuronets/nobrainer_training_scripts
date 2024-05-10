@@ -22,8 +22,8 @@ class TestCallback(tf.keras.callbacks.Callback):
         self.cmap = cmap
         self.outdir = outdir
         self.config = config
-        n_classes = self.config["basic"]["n_classes"]  # 6 or 50 or 115
-        self.label_map = label_mapping.get_label_mapping(n_classes)
+        self.n_classes = self.config["basic"]["n_classes"]  # 6 or 50 or 115
+        self.label_map = label_mapping.get_label_mapping(self.n_classes)
         self.normalizer = standardize if self.config["basic"]["normalize"] else None
 
     def on_epoch_end(self, epoch, logs=None):
@@ -58,10 +58,13 @@ class TestCallback(tf.keras.callbacks.Callback):
 
             assert y_true.shape == y_pred.shape, f"Shape mismatch at test time"
 
-            u, inv = np.unique(y_true, return_inverse=True)
-            y_true = np.array([self.label_map.get(x, 0) for x in u])[inv].reshape(
-                y_true.shape
-            )
+            if self.n_classes in [1, 2]:
+                y_true = (y_true > 0).astype(np.uint8)  # binarize
+            else:
+                u, inv = np.unique(y_true, return_inverse=True)
+                y_true = np.array([self.label_map.get(x, 0) for x in u])[inv].reshape(
+                    y_true.shape
+                )
 
             for slice_dim, dim_name in zip(range(3), ["sagittal", "axial", "coronal"]):
 
@@ -114,8 +117,8 @@ class MemoryLoggerCallback(tf.keras.callbacks.Callback):
 
 
 def get_callbacks(
+    config,
     output_dirname: str = "test",
-    save_freq: int = 250,
     gpu_names: Optional[list[str]] = None,
 ):
     print("creating callbacks")
@@ -132,7 +135,8 @@ def get_callbacks(
         patience=10,
     )
     callback_backup = tf.keras.callbacks.BackupAndRestore(
-        backup_dir=f"output/{output_dirname}/backup", save_freq=save_freq
+        backup_dir=f"output/{output_dirname}/backup",
+        save_freq=config["train"]["save_freq"],
     )
     callback_gpustats = GpuStatsLogger(gpu_names)
 

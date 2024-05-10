@@ -6,7 +6,7 @@
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 09:08:29
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-05-09 20:34:12
+# @Last Modified At: 2024-05-10 08:36:17
 # @Description:
 #   1. Code to train bayesian meshnet on kwyk dataset.
 #   2. binary segmentation is used in this model.
@@ -105,6 +105,11 @@ def init_device(flag: bool = False):
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("config", type=str)
+    # If running the code in debug mode
+    gettrace = getattr(sys, "gettrace", None)
+
+    if gettrace():
+        sys.argv = ["brainy_train.py", "configs/test.yml"]
     args = parser.parse_args()
 
     config = configparser.ConfigParser()
@@ -125,6 +130,7 @@ if __name__ == "__main__":
     n_epochs = train_config["n_epochs"]
 
     output_dirname = f"{model_name}"
+    checkpoint_filepath = f"output/{output_dirname}/nobrainer_ckpts/"
 
     print(f"Nobrainer version: {nobrainer.__version__}")
     print(f"Git commit hash: {get_git_revision_short_hash()}")
@@ -176,7 +182,9 @@ if __name__ == "__main__":
         f"output/{output_dirname}/predictions",
     )
 
-    callbacks = get_callbacks(output_dirname=output_dirname, gpu_names=gpu_names)
+    callbacks = get_callbacks(
+        config, output_dirname=output_dirname, gpu_names=gpu_names
+    )
     callbacks.append(test_callback)
 
     print("creating model")
@@ -190,7 +198,7 @@ if __name__ == "__main__":
             dropout="concrete",
         ),
         multi_gpu=True,
-        checkpoint_filepath=f"output/{output_dirname}/nobrainer_ckpts",
+        checkpoint_filepath=checkpoint_filepath,
     )
 
     print("training")
