@@ -6,7 +6,7 @@
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 09:08:29
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-05-10 08:35:09
+# @Last Modified At: 2024-05-10 10:39:27
 # @Description:
 #   1. Code to train brainy (unet) on kwyk dataset.
 #   2. binary segmentation is used in this model.
@@ -199,11 +199,22 @@ if __name__ == "__main__":
     )
 
     print("training")
-    _ = bem.fit(
+    history = bem.fit(
         dataset_train=dataset_train,
         dataset_validate=dataset_eval,
         epochs=n_epochs,
         callbacks=callbacks,
     )
+    print(len(history.history.history["loss"]))
+
+    # snippet to test resumption. see resume.py
+    bem.load(checkpoint_filepath)
+    history = bem.fit(
+        dataset_train=dataset_train,
+        dataset_validate=dataset_eval,
+        epochs=n_epochs,
+        callbacks=callbacks,
+    )
+    print(len(history.history.history["loss"]))
 
     print("Success")
