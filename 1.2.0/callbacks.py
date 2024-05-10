@@ -140,15 +140,18 @@ def get_callbacks(
     )
     callback_gpustats = GpuStatsLogger(gpu_names)
 
-    memory_logger_callback = MemoryLoggerCallback()
+    callback_mem_logger = MemoryLoggerCallback()
+
+    callback_nanterminate = tf.keras.callbacks.TerminateOnNaN()
 
     callbacks = [
         # callback_gpustats,  # gpu stats callback should be placed before tboard/csvlogger callback
-        # memory_logger_callback,
+        # callback_mem_logger,
         callback_model_checkpoint,
         callback_tensorboard,
         callback_early_stopping,
         callback_backup,
+        callback_nanterminate
     ]
 
     return callbacks
