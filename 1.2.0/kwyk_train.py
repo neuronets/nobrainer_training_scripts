@@ -6,7 +6,7 @@
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 09:08:29
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-05-10 08:36:17
+# @Last Modified At: 2024-05-11 18:51:18
 # @Description:
 #   1. Code to train bayesian meshnet on kwyk dataset.
 #   2. binary segmentation is used in this model.
@@ -109,7 +109,7 @@ if __name__ == "__main__":
     gettrace = getattr(sys, "gettrace", None)
 
     if gettrace():
-        sys.argv = ["brainy_train.py", "configs/test.yml"]
+        sys.argv = ["kwyk_train.py", "configs/test.yml"]
     args = parser.parse_args()
 
     config = configparser.ConfigParser()
@@ -121,7 +121,7 @@ if __name__ == "__main__":
 
     # basic config
     basic_config = config["basic"]
-    model_name = basic_config["model_name"]
+    output_dir = basic_config["model_name"]
     n_classes = basic_config["n_classes"]
     normalize = basic_config["normalize"]
 
@@ -129,8 +129,7 @@ if __name__ == "__main__":
     train_config = config["train"]
     n_epochs = train_config["n_epochs"]
 
-    output_dirname = f"{model_name}"
-    checkpoint_filepath = f"output/{output_dirname}/nobrainer_ckpts/"
+    checkpoint_filepath = f"output/{output_dir}/model_chkpts/" + "{epoch:02d}"
 
     print(f"Nobrainer version: {nobrainer.__version__}")
     print(f"Git commit hash: {get_git_revision_short_hash()}")
@@ -175,25 +174,13 @@ if __name__ == "__main__":
         dataset_train = dataset_train.normalize(normalizer=standardize)
         dataset_eval = dataset_eval.normalize(normalizer=standardize)
 
-    test_callback = TestCallback(
-        config,
-        val_list,
-        get_color_map(n_classes),
-        f"output/{output_dirname}/predictions",
-    )
-
-    callbacks = get_callbacks(
-        config, output_dirname=output_dirname, gpu_names=gpu_names
-    )
-    callbacks.append(test_callback)
-
     print("creating model")
-    kwyk = Segmentation(
+    model = Segmentation(
         variational_meshnet,
         model_args=dict(
             receptive_field=37,
             filters=96,
-            no_examples=len(train_list),
+            no_examples=dataset_train.get_steps_per_epoch() * dataset_train.batch_size,
             is_monte_carlo=True,
             dropout="concrete",
         ),
@@ -201,8 +188,10 @@ if __name__ == "__main__":
         checkpoint_filepath=checkpoint_filepath,
     )
 
+    callbacks = get_callbacks(config, model, output_dir=output_dir, gpu_names=gpu_names)
+
     print("training")
-    _ = kwyk.fit(
+    model.fit(
         dataset_train=dataset_train,
         dataset_validate=dataset_eval,
         epochs=n_epochs,

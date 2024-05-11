@@ -141,6 +141,7 @@ def plot_tensor_slices(
     plt.tight_layout()
     plt.savefig(out_name, dpi=600)
     # plt.show()
+    plt.close()
 
     return crop_dims
 

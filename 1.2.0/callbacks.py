@@ -8,6 +8,7 @@ import numpy as np
 import tensorflow as tf
 from icecream import ic
 from nobrainer.prediction import predict
+from nobrainer.processing.checkpoint import CheckpointTracker
 from nobrainer.volume import standardize
 from nvitop.callbacks.keras import GpuStatsLogger
 
@@ -28,6 +29,9 @@ class TestCallback(tf.keras.callbacks.Callback):
         self.cmap = get_color_map(self.n_classes)
 
     def on_epoch_end(self, epoch, logs=None):
+        if self.model.stop_training:
+            return
+
         print("\nTesting model after epoch {}...".format(epoch + 1))
 
         self.curr_outdir = os.path.join(self.outdir, f"epoch-{epoch:02d}")
@@ -147,26 +151,26 @@ def get_validation_file_list(config):
 
 def get_callbacks(
     config,
-    output_dirname: str = "test",
+    model,
+    output_dir: str = "test",
     gpu_names: Optional[list[str]] = None,
 ):
     print("creating callbacks")
 
-    callback_model_checkpoint = tf.keras.callbacks.ModelCheckpoint(
-        os.path.join(f"output/{output_dirname}/model_ckpts", "model_{epoch:02d}.keras")
-    )
     callback_tensorboard = tf.keras.callbacks.TensorBoard(
-        log_dir=f"output/{output_dirname}/logs/", histogram_freq=1
+        log_dir=f"output/{output_dir}/logs/", histogram_freq=1
     )
     callback_early_stopping = tf.keras.callbacks.EarlyStopping(
         monitor="val_loss",
         min_delta=1e-4,
         patience=10,
     )
+
     callback_backup = tf.keras.callbacks.BackupAndRestore(
-        backup_dir=f"output/{output_dirname}/backup",
+        backup_dir=f"output/{output_dir}/backup",
         save_freq=config["train"]["save_freq"],
     )
+
     callback_gpustats = GpuStatsLogger(gpu_names)
 
     callback_mem_logger = MemoryLoggerCallback()
@@ -176,18 +180,22 @@ def get_callbacks(
     callback_plotting = TestCallback(
         config,
         get_validation_file_list(config),
-        f"output/{output_dirname}/predictions",
+        f"output/{output_dir}/predictions",
+    )
+
+    callback_best_checkpoint = CheckpointTracker(
+        model, f"output/{output_dir}/best_model", save_best_only=True
     )
 
     callbacks = [
         # callback_gpustats,  # gpu stats callback should be placed before tboard/csvlogger callback
         # callback_mem_logger,
-        callback_model_checkpoint,
         callback_tensorboard,
         callback_early_stopping,
-        callback_backup,
+        # callback_backup,  # turning off see https://github.com/keras-team/tf-keras/issues/430
         callback_nanterminate,
         callback_plotting,
+        callback_best_checkpoint,
     ]
 
     return callbacks

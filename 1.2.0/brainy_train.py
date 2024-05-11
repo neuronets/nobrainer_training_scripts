@@ -6,7 +6,7 @@
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 09:08:29
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-05-11 06:36:34
+# @Last Modified At: 2024-05-11 18:50:31
 # @Description:
 #   1. Code to train brainy (unet) on kwyk dataset.
 #   2. binary segmentation is used in this model.
@@ -34,7 +34,7 @@ from nobrainer.processing.segmentation import Segmentation
 from nobrainer.volume import standardize
 
 import label_mapping
-from callbacks import TestCallback, get_callbacks
+from callbacks import get_callbacks
 from utils import get_git_revision_short_hash, main_timer
 
 ic.enable()
@@ -123,7 +123,7 @@ if __name__ == "__main__":
 
     # basic config
     basic_config = config["basic"]
-    model_name = basic_config["model_name"]
+    output_dir = basic_config["model_name"]
     n_classes = basic_config["n_classes"]
     normalize = basic_config["normalize"]
 
@@ -131,8 +131,7 @@ if __name__ == "__main__":
     train_config = config["train"]
     n_epochs = train_config["n_epochs"]
 
-    output_dirname = f"{model_name}"
-    checkpoint_filepath = f"output/{output_dirname}/nobrainer_ckpts/"
+    checkpoint_filepath = f"output/{output_dir}/model_chkpts/" + "{epoch:02d}"
 
     print(f"Nobrainer version: {nobrainer.__version__}")
     print(f"Git commit hash: {get_git_revision_short_hash()}")
@@ -153,36 +152,22 @@ if __name__ == "__main__":
         dataset_train = dataset_train.normalize(normalizer=standardize)
         dataset_eval = dataset_eval.normalize(normalizer=standardize)
 
-    callbacks = get_callbacks(
-        config, output_dirname=output_dirname, gpu_names=gpu_names
-    )
-
     print("creating model")
-    bem = Segmentation(
+    model = Segmentation(
         unet,
         model_args=dict(batchnorm=True),
         multi_gpu=True,
         checkpoint_filepath=checkpoint_filepath,
     )
 
+    callbacks = get_callbacks(config, model, output_dir=output_dir, gpu_names=gpu_names)
+
     print("training")
-    bem.fit(
+    model.fit(
         dataset_train=dataset_train,
         dataset_validate=dataset_eval,
         epochs=n_epochs,
         callbacks=callbacks,
     )
-
-    # # snippet to test resumption. see resume.py
-    # # bem = Segmentation.load(checkpoint_filepath)
-
-    # print(checkpoint_filepath)
-    # print(os.path.dirname(checkpoint_filepath))
-
-    # bem = Segmentation.init_with_checkpoints(
-    #     unet,
-    #     model_args=dict(batchnorm=True),
-    #     checkpoint_filepath=checkpoint_filepath,
-    # )
 
     print("Success")
