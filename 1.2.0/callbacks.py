@@ -11,20 +11,21 @@ from nobrainer.prediction import predict
 from nobrainer.volume import standardize
 from nvitop.callbacks.keras import GpuStatsLogger
 
+import create_tfshards
 import label_mapping
-from utils import plot_tensor_slices
+from utils import get_color_map, plot_tensor_slices
 
 
 class TestCallback(tf.keras.callbacks.Callback):
-    def __init__(self, config, test_list, cmap, outdir):
+    def __init__(self, config, test_list, outdir):
         super(TestCallback, self).__init__()
         self.test_list = test_list
-        self.cmap = cmap
         self.outdir = outdir
         self.config = config
         self.n_classes = self.config["basic"]["n_classes"]  # 6 or 50 or 115
         self.label_map = label_mapping.get_label_mapping(self.n_classes)
         self.normalizer = standardize if self.config["basic"]["normalize"] else None
+        self.cmap = get_color_map(self.n_classes)
 
     def on_epoch_end(self, epoch, logs=None):
         print("\nTesting model after epoch {}...".format(epoch + 1))
@@ -116,6 +117,34 @@ class MemoryLoggerCallback(tf.keras.callbacks.Callback):
             print(self.memory_usage)
 
 
+def get_validation_file_list(config):
+    volume_filepaths = create_tfshards.create_filepaths(
+        "/nese/mit/group/sig/data/kwyk/rawdata",
+        feature_string="orig",
+        label_string="aseg",
+    )
+
+    if config["basic"]["debug"]:
+        volume_filepaths = create_tfshards.create_filepaths(
+            "/om2/user/hgazula/nobrainer-data/datasets",
+            feature_string="t1",
+            label_string="aseg",
+        )
+
+    ic(len(volume_filepaths))
+
+    _, val_list = create_tfshards.custom_train_val_test_split(
+        volume_filepaths,
+        train_size=0.90,
+        val_size=0.10,
+        test_size=0.00,
+        random_state=42,
+        shuffle=False,
+    )
+
+    return val_list
+
+
 def get_callbacks(
     config,
     output_dirname: str = "test",
@@ -144,6 +173,12 @@ def get_callbacks(
 
     callback_nanterminate = tf.keras.callbacks.TerminateOnNaN()
 
+    callback_plotting = TestCallback(
+        config,
+        get_validation_file_list(config),
+        f"output/{output_dirname}/predictions",
+    )
+
     callbacks = [
         # callback_gpustats,  # gpu stats callback should be placed before tboard/csvlogger callback
         # callback_mem_logger,
@@ -151,7 +186,8 @@ def get_callbacks(
         callback_tensorboard,
         callback_early_stopping,
         callback_backup,
-        callback_nanterminate
+        callback_nanterminate,
+        callback_plotting,
     ]
 
     return callbacks

@@ -6,7 +6,7 @@
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 09:08:29
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-05-10 10:39:27
+# @Last Modified At: 2024-05-11 06:36:34
 # @Description:
 #   1. Code to train brainy (unet) on kwyk dataset.
 #   2. binary segmentation is used in this model.
@@ -33,10 +33,9 @@ from nobrainer.models import unet
 from nobrainer.processing.segmentation import Segmentation
 from nobrainer.volume import standardize
 
-import create_tfshards
 import label_mapping
 from callbacks import TestCallback, get_callbacks
-from utils import get_color_map, get_git_revision_short_hash, main_timer
+from utils import get_git_revision_short_hash, main_timer
 
 ic.enable()
 
@@ -140,30 +139,6 @@ if __name__ == "__main__":
 
     NUM_GPUS, gpu_names = init_device(flag=False)
 
-    volume_filepaths = create_tfshards.create_filepaths(
-        "/nese/mit/group/sig/data/kwyk/rawdata",
-        feature_string="orig",
-        label_string="aseg",
-    )
-
-    if config["basic"]["debug"]:
-        volume_filepaths = create_tfshards.create_filepaths(
-            "/om2/user/hgazula/nobrainer-data/datasets",
-            feature_string="t1",
-            label_string="aseg",
-        )
-
-    ic(len(volume_filepaths))
-
-    train_list, val_list = create_tfshards.custom_train_val_test_split(
-        volume_filepaths,
-        train_size=0.90,
-        val_size=0.10,
-        test_size=0.00,
-        random_state=42,
-        shuffle=False,
-    )
-
     print("loading data")
     dataset_train, dataset_eval = (
         load_custom_tfrec(config=basic_config, target="eval"),
@@ -178,17 +153,9 @@ if __name__ == "__main__":
         dataset_train = dataset_train.normalize(normalizer=standardize)
         dataset_eval = dataset_eval.normalize(normalizer=standardize)
 
-    test_callback = TestCallback(
-        config,
-        val_list,
-        get_color_map(n_classes),
-        f"output/{output_dirname}/predictions",
-    )
-
     callbacks = get_callbacks(
         config, output_dirname=output_dirname, gpu_names=gpu_names
     )
-    callbacks.append(test_callback)
 
     print("creating model")
     bem = Segmentation(
@@ -199,22 +166,23 @@ if __name__ == "__main__":
     )
 
     print("training")
-    history = bem.fit(
+    bem.fit(
         dataset_train=dataset_train,
         dataset_validate=dataset_eval,
         epochs=n_epochs,
         callbacks=callbacks,
     )
-    print(len(history.history.history["loss"]))
 
-    # snippet to test resumption. see resume.py
-    bem.load(checkpoint_filepath)
-    history = bem.fit(
-        dataset_train=dataset_train,
-        dataset_validate=dataset_eval,
-        epochs=n_epochs,
-        callbacks=callbacks,
-    )
-    print(len(history.history.history["loss"]))
+    # # snippet to test resumption. see resume.py
+    # # bem = Segmentation.load(checkpoint_filepath)
+
+    # print(checkpoint_filepath)
+    # print(os.path.dirname(checkpoint_filepath))
+
+    # bem = Segmentation.init_with_checkpoints(
+    #     unet,
+    #     model_args=dict(batchnorm=True),
+    #     checkpoint_filepath=checkpoint_filepath,
+    # )
 
     print("Success")
