@@ -171,7 +171,8 @@ def get_callbacks(
         save_freq=config["train"]["save_freq"],
     )
 
-    callback_gpustats = GpuStatsLogger(gpu_names)
+    if gpu_names:
+        callback_gpustats = GpuStatsLogger(gpu_names)
 
     callback_mem_logger = MemoryLoggerCallback()
 
