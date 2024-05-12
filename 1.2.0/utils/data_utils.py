@@ -1,14 +1,9 @@
-import os
-
-from utils.py_utils import main_timer
-
-# ruff: noqa: E402
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 from typing import Dict
 
 from nobrainer.dataset import Dataset
 
 from utils.label_mapping import get_label_mapping
+from utils.py_utils import main_timer
 
 
 @main_timer
@@ -20,6 +15,8 @@ def load_custom_tfrec(
         raise ValueError(f"Invalid target: {target}")
 
     n_classes = config["n_classes"]
+    volume_shape = config["volume_shape"]
+    block_shape = config["block_shape"]
 
     label_map = get_label_mapping(n_classes)
 
@@ -32,8 +29,8 @@ def load_custom_tfrec(
 
     dataset = Dataset.from_tfrecords(
         file_pattern=file_pattern,
-        volume_shape=config["volume_shape"],
-        block_shape=config["block_shape"],
+        volume_shape=volume_shape,
+        block_shape=block_shape,
         n_classes=n_classes,
         label_mapping=label_map,
         n_volumes=volumes[target],
