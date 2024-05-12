@@ -1,11 +1,15 @@
-import imageio.v3 as iio
 import glob
 import os
-import numpy as np
-from PIL import Image, ImageDraw, ImageFont
 from argparse import ArgumentParser
 from pathlib import Path
+from pprint import pprint
 
+import imageio.v3 as iio
+import matplotlib.animation as animation
+import matplotlib.image as mpimg
+import matplotlib.pyplot as plt
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont
 
 parser = ArgumentParser()
 parser.add_argument("--key", type=str, default="sagittal")
@@ -31,6 +35,40 @@ folders = sorted(
 )
 
 print("Number of epochs: ", len(folders))
+
+# keys = ["sagittal", "axial", "coronal"]
+
+# for key in keys:
+#     frames = []
+#     for folder in folders:
+#         frames.append(glob.glob(os.path.join(folder, f"*pred*{key}*"))[0])
+
+#     # Create a function to animate the frames
+#     def animate(i):
+#         plt.imshow(mpimg.imread(frames[i]))
+#         plt.tight_layout()
+#         plt.title(f"Epoch: {i:03d}")
+
+#     # Set up the figure
+#     fig = plt.figure(figsize=(10, 10))
+#     plt.axis("off")
+
+#     # Create the animation
+#     ani = animation.FuncAnimation(
+#         fig, animate, frames=len(frames), interval=100, blit=False, repeat=False
+#     )
+
+#     # ani = animation.FuncAnimation(plt.gcf(), animate_new, frames=len(frames),
+#     #                      interval=(2000.0/nframes), blit=False, repeat=False)
+#     ani.save(
+#         os.path.join(working_dir, experiment_name, f"{key}.gif"), writer="imagemagick"
+#     )
+
+#     # Uncomment the line below if you want to save the animation to a file
+#     # ani.save('animation.mp4', writer='ffmpeg', fps=10)
+
+#     # # Show the animation
+#     # plt.show()
 
 # for key in keys[:1]:
 #     frames = []

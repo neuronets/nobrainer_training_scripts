@@ -12,9 +12,8 @@ from nobrainer.processing.checkpoint import CheckpointTracker
 from nobrainer.volume import standardize
 from nvitop.callbacks.keras import GpuStatsLogger
 
-import create_tfshards
-import label_mapping
-from utils import get_color_map, plot_tensor_slices
+from utils import create_tfshards, label_mapping
+from utils.plot_utils import get_color_map, plot_tensor_slices
 
 
 class TestCallback(tf.keras.callbacks.Callback):
@@ -72,7 +71,6 @@ class TestCallback(tf.keras.callbacks.Callback):
                 )
 
             for slice_dim, dim_name in zip(range(3), ["sagittal", "axial", "coronal"]):
-
                 pred_outfile_name = os.path.join(
                     self.curr_outdir, f"{subject_id}_pred_{dim_name}.png"
                 )
