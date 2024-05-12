@@ -6,7 +6,7 @@
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 09:08:29
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-05-11 18:50:31
+# @Last Modified At: 2024-05-11 22:55:38
 # @Description:
 #   1. Code to train brainy (unet) on kwyk dataset.
 #   2. binary segmentation is used in this model.
@@ -153,10 +153,9 @@ if __name__ == "__main__":
         dataset_eval = dataset_eval.normalize(normalizer=standardize)
 
     print("creating model")
-    model = Segmentation(
+    model = Segmentation.init_with_checkpoints(
         unet,
         model_args=dict(batchnorm=True),
-        multi_gpu=True,
         checkpoint_filepath=checkpoint_filepath,
     )
 

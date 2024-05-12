@@ -6,7 +6,7 @@
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 09:08:29
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-05-11 18:51:18
+# @Last Modified At: 2024-05-11 22:59:42
 # @Description:
 #   1. Code to train bayesian meshnet on kwyk dataset.
 #   2. binary segmentation is used in this model.
@@ -33,8 +33,8 @@ from nobrainer.volume import standardize
 
 import create_tfshards
 import label_mapping
-from callbacks import TestCallback, get_callbacks
-from utils import get_color_map, get_git_revision_short_hash, main_timer
+from callbacks import get_callbacks
+from utils import get_git_revision_short_hash, main_timer
 
 ic.enable()
 
@@ -136,30 +136,6 @@ if __name__ == "__main__":
 
     NUM_GPUS, gpu_names = init_device(flag=False)
 
-    volume_filepaths = create_tfshards.create_filepaths(
-        "/nese/mit/group/sig/data/kwyk/rawdata",
-        feature_string="orig",
-        label_string="aseg",
-    )
-
-    if config["basic"]["debug"]:
-        volume_filepaths = create_tfshards.create_filepaths(
-            "/om2/user/hgazula/nobrainer-data/datasets",
-            feature_string="t1",
-            label_string="aseg",
-        )
-
-    ic(len(volume_filepaths))
-
-    train_list, val_list = create_tfshards.custom_train_val_test_split(
-        volume_filepaths,
-        train_size=0.90,
-        val_size=0.10,
-        test_size=0.00,
-        random_state=42,
-        shuffle=False,
-    )
-
     print("loading data")
     dataset_train, dataset_eval = (
         load_custom_tfrec(config=basic_config, target="eval"),
@@ -175,7 +151,7 @@ if __name__ == "__main__":
         dataset_eval = dataset_eval.normalize(normalizer=standardize)
 
     print("creating model")
-    model = Segmentation(
+    model = Segmentation.init_with_checkpoints(
         variational_meshnet,
         model_args=dict(
             receptive_field=37,
@@ -184,7 +160,6 @@ if __name__ == "__main__":
             is_monte_carlo=True,
             dropout="concrete",
         ),
-        multi_gpu=True,
         checkpoint_filepath=checkpoint_filepath,
     )
 

@@ -34,7 +34,7 @@ class TestCallback(tf.keras.callbacks.Callback):
 
         print("\nTesting model after epoch {}...".format(epoch + 1))
 
-        self.curr_outdir = os.path.join(self.outdir, f"epoch-{epoch:02d}")
+        self.curr_outdir = os.path.join(self.outdir, f"epoch-{epoch + 1:02d}")
         os.makedirs(self.curr_outdir, exist_ok=True)
 
         test_samples = random.choices(
