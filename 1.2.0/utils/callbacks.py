@@ -61,9 +61,6 @@ class TestCallback(tf.keras.callbacks.Callback):
             y_pred[y_true == 0] = 0
 
             assert y_true.shape == y_pred.shape, f"Shape mismatch at test time"
-            assert (
-                len(np.unique(y_pred)) <= len(np.unique(y_true)) == self.n_classes
-            ) == True, "something's wrong"
 
             if self.n_classes in [1, 2]:
                 y_true = (y_true > 0).astype(np.uint8)  # binarize
@@ -72,7 +69,10 @@ class TestCallback(tf.keras.callbacks.Callback):
                 y_true = np.array([self.label_map.get(x, 0) for x in u])[inv].reshape(
                     y_true.shape
                 )
-            assert len(np.unique(y_true)) == self.n_classes, "something's wrong"
+            
+            assert (
+                len(np.unique(y_pred)) <= len(np.unique(y_true)) == self.n_classes
+            ) == True, "Either n_classes(y_pred) > n_classes(y_true) or n_classes(y_true) != n_classes"
 
             for slice_dim, dim_name in zip(range(3), ["sagittal", "axial", "coronal"]):
                 pred_outfile_name = os.path.join(
