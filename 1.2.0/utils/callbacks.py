@@ -61,6 +61,9 @@ class TestCallback(tf.keras.callbacks.Callback):
             y_pred[y_true == 0] = 0
 
             assert y_true.shape == y_pred.shape, f"Shape mismatch at test time"
+            assert (
+                len(np.unique(y_pred)) <= len(np.unique(y_true)) == self.n_classes
+            ) == True, "something's wrong"
 
             if self.n_classes in [1, 2]:
                 y_true = (y_true > 0).astype(np.uint8)  # binarize
@@ -69,6 +72,7 @@ class TestCallback(tf.keras.callbacks.Callback):
                 y_true = np.array([self.label_map.get(x, 0) for x in u])[inv].reshape(
                     y_true.shape
                 )
+            assert len(np.unique(y_true)) == self.n_classes, "something's wrong"
 
             for slice_dim, dim_name in zip(range(3), ["sagittal", "axial", "coronal"]):
                 pred_outfile_name = os.path.join(
@@ -190,7 +194,7 @@ def get_callbacks(
         # callback_gpustats,  # gpu stats callback should be placed before tboard/csvlogger callback
         # callback_mem_logger,
         callback_tensorboard,
-        callback_early_stopping,
+        # callback_early_stopping,
         # callback_backup,  # turning off see https://github.com/keras-team/tf-keras/issues/430
         callback_nanterminate,
         callback_plotting,

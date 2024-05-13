@@ -8,7 +8,7 @@
     block_shape: (256, 256, 256)
 
 [train]
-    n_epochs: 500
+    n_epochs: 250
     save_freq: "epoch"
 
 [validation]
