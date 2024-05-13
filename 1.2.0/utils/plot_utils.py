@@ -2,7 +2,6 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
 from ext.mindboggle.labels import extract_numbers_names_colors
 
 

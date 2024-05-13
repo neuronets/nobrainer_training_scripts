@@ -20,12 +20,12 @@ import nibabel as nib
 import nobrainer
 import numpy as np
 import tensorflow as tf
+from label_mapping import get_label_mapping
 from nobrainer.dataset import Dataset
 from nobrainer.models import unet
 from nobrainer.processing.segmentation import Segmentation
 from nobrainer.volume import standardize
 
-from label_mapping import get_label_mapping
 from utils import main_timer
 
 # tf.data.experimental.enable_debug_mode()

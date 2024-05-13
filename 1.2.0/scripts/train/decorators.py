@@ -6,7 +6,7 @@
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 09:08:29
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-05-13 07:06:03
+# @Last Modified At: 2024-05-13 10:25:28
 # @Description:
 #   1. Code to train brainy (unet) on kwyk dataset.
 #   2. binary segmentation is used in this model.
@@ -32,11 +32,10 @@ from nobrainer.models.bayesian_meshnet import variational_meshnet
 from nobrainer.processing.segmentation import Segmentation
 from nobrainer.volume import standardize
 
-from utils.data_utils import load_custom_tfrec
 from utils.callbacks import get_callbacks
-from utils.py_utils import get_git_revision_short_hash, map_nested_dicts
-from utils.tf_utils import init_device
 from utils.data_utils import load_custom_tfrec
+from utils.py_utils import get_git_revision_short_hash, get_remote_url, map_nested_dicts
+from utils.tf_utils import init_device
 
 ic.enable()
 
@@ -62,8 +61,10 @@ def train(func):
         args = argument_parser()
 
         config = configparser.ConfigParser()
-        config.read(args.config)
+        if not os.path.exists(args.config):
+            raise FileNotFoundError(f"{args.config} does not exist")
 
+        config.read(args.config)
         config = map_nested_dicts(config._sections, ast.literal_eval)
 
         pprint(config)
@@ -80,8 +81,9 @@ def train(func):
         checkpoint_filepath = f"output/{output_dir}/model_chkpts/" + "{epoch:02d}"
 
         print(f"Nobrainer version: {nobrainer.__version__}")
-        print(f"Git commit hash: {get_git_revision_short_hash()}")
-
+        print(
+            f"URL: {get_remote_url(os.getcwd())}/tree/{get_git_revision_short_hash()}"
+        )
         NUM_GPUS, gpu_names = init_device(flag=False)
 
         print("loading data")
@@ -157,4 +159,4 @@ def kwyk(*args, **kwargs):
 if __name__ == "__main__":
     args = argument_parser()
     model_dict = {"brainy": brainy, "kwyk": kwyk}
-    model_dict[args.model](args)
+    model_dict[args.model]()

@@ -5,8 +5,8 @@
 # @Author: Harsha
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 09:08:29
-# @Last Modified By: H Gazula
-# @Last Modified At: 2024-05-12 11:49:28
+# @Last Modified By: Harsha
+# @Last Modified At: 2024-05-13 10:22:38
 # @Description:
 #   1. Code to train bayesian meshnet on kwyk dataset.
 #   2. binary segmentation is used in this model.
@@ -22,19 +22,17 @@ from icecream import ic
 
 # ruff: noqa: E402
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-from typing import Dict
 
 import nobrainer
-from nobrainer.dataset import Dataset
 from nobrainer.models.bayesian_meshnet import variational_meshnet
 from nobrainer.processing.segmentation import Segmentation
 from nobrainer.volume import standardize
 
 from utils import label_mapping
 from utils.callbacks import get_callbacks
-from utils.py_utils import get_git_revision_short_hash, main_timer, map_nested_dicts
-from utils.tf_utils import init_device
 from utils.data_utils import load_custom_tfrec
+from utils.py_utils import get_git_revision_short_hash, get_remote_url, map_nested_dicts
+from utils.tf_utils import init_device
 
 ic.enable()
 
@@ -68,7 +66,7 @@ if __name__ == "__main__":
     checkpoint_filepath = f"output/{output_dir}/model_chkpts/" + "{epoch:02d}"
 
     print(f"Nobrainer version: {nobrainer.__version__}")
-    print(f"Git commit hash: {get_git_revision_short_hash()}")
+    print(f"URL: {get_remote_url(os.getcwd())}/tree/{get_git_revision_short_hash()}")
 
     NUM_GPUS, gpu_names = init_device(flag=False)
 

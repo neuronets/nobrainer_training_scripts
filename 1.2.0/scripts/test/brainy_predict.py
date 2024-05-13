@@ -13,12 +13,11 @@
 import os
 import random
 
+import create_tfshards
 import matplotlib.pyplot as plt
 from nilearn import plotting
 from nobrainer.processing.segmentation import Segmentation
 from nobrainer.volume import standardize
-
-import create_tfshards
 
 DATA_DIR = "/nese/mit/group/sig/data/kwyk/rawdata"
 PRJCT_DIR = "/om2/user/hgazula/nobrainer_training_scripts"

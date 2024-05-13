@@ -19,8 +19,8 @@ from datetime import datetime
 import nibabel as nib
 import numpy as np
 import tensorflow as tf
-from nobrainer.models import unet
 from nobrainer.dataset import Dataset
+from nobrainer.models import unet
 
 DATA_DIR = "/nese/mit/group/sig/data/kwyk/rawdata"
 PRJCT_DIR = os.getcwd()

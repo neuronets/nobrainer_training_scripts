@@ -50,6 +50,47 @@ def get_git_revision_short_hash() -> str:
     )
 
 
+def ssh_to_https(ssh_url):
+    # Check if the URL is SSH format
+    if not ssh_url.startswith("git@"):
+        print("Not a valid SSH URL")
+        return None
+
+    # Extract the username and host
+    parts = ssh_url.split(":")
+    if len(parts) != 2:
+        print("Invalid SSH URL format")
+        return None
+    host = parts[0][4:]  # Remove "git@" from the beginning
+    path = parts[1].rstrip(".git\n")
+
+    # Construct the HTTPS URL
+    https_url = f"https://{host}/{path}"
+    return https_url
+
+
+def get_remote_url(path_to_repo, https=True):
+    try:
+        # Run the git command to get the remote URL
+        result = subprocess.run(
+            ["git", "config", "--get", "remote.origin.url"],
+            cwd=path_to_repo,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        remote_url = result.stdout.strip()
+
+        if https and remote_url.startswith("https"):
+            return remote_url
+        else:
+            return ssh_to_https(remote_url)
+
+    except subprocess.CalledProcessError as e:
+        print("Error:", e)
+        return None
+
+
 def _read_csv(filepath, skip_header=True, delimiter=","):
     """Return list of tuples from a CSV, where each tuple contains the items
     in a row.
