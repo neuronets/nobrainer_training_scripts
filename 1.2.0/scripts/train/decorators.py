@@ -6,7 +6,7 @@
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 09:08:29
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-05-13 10:25:28
+# @Last Modified At: 2024-05-21 11:01:57
 # @Description:
 #   1. Code to train brainy (unet) on kwyk dataset.
 #   2. binary segmentation is used in this model.
@@ -29,12 +29,13 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import nobrainer
 from nobrainer.models import unet
 from nobrainer.models.bayesian_meshnet import variational_meshnet
+from nobrainer.models.bayesian_vnet import bayesian_vnet
 from nobrainer.processing.segmentation import Segmentation
 from nobrainer.volume import standardize
-
 from utils.callbacks import get_callbacks
 from utils.data_utils import load_custom_tfrec
-from utils.py_utils import get_git_revision_short_hash, get_remote_url, map_nested_dicts
+from utils.py_utils import (get_git_revision_short_hash, get_remote_url,
+                            map_nested_dicts)
 from utils.tf_utils import init_device
 
 ic.enable()
@@ -156,7 +157,19 @@ def kwyk(*args, **kwargs):
     return model
 
 
+@train
+def bayes_vnet(*args, **kwargs):
+    checkpoint_filepath = kwargs["checkpoint_filepath"]
+
+    model = Segmentation.init_with_checkpoints(
+        bayesian_vnet,
+        model_args=dict(kernel_size=3, activation="relu", padding="SAME"),
+        checkpoint_filepath=checkpoint_filepath,
+    )
+    return model
+
+
 if __name__ == "__main__":
     args = argument_parser()
-    model_dict = {"brainy": brainy, "kwyk": kwyk}
+    model_dict = {"brainy": brainy, "kwyk": kwyk, "bayes_vnet": bayes_vnet}
     model_dict[args.model]()
