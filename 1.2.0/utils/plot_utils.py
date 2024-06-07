@@ -82,8 +82,8 @@ def plot_tensor_slices(
                 ] = slice_data
 
     # Plot the larger matrix
-    plt.figure(figsize=(10, 10))
-    plt.imshow(R, cmap=cmap, interpolation="nearest")
+    plt.figure(figsize=(8, 8))
+    plt.imshow(R, cmap=cmap, interpolation="nearest", vmin=0, vmax=len(cmap.colors) - 1)
     plt.axis("off")
     plt.tight_layout()
     plt.savefig(out_name, dpi=600)
