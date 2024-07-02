@@ -1,10 +1,12 @@
+# ruff: noqa: E402
+
 import os
+import sys
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 from pprint import pprint
 
 import nobrainer
-import numpy as np
 import tensorflow as tf
 from nobrainer.dataset import write_multi_resolution
 from nobrainer.models import progressivegan as pgan
@@ -24,6 +26,13 @@ def main():
 
 
 if __name__ == "__main__":
+    # If running the code in debug mode
+    gettrace = getattr(sys, "gettrace", None)
+
+    if gettrace():
+        affinity = os.sched_getaffinity(0)
+        os.sched_setaffinity(0, list(affinity)[:1])
+
     print(tf.config.list_physical_devices("GPU"))
     # main()
     csv_path = nobrainer.utils.get_data()
@@ -55,4 +64,4 @@ if __name__ == "__main__":
     # datasets[64]['batch_size'] = 4
 
     gen = ProgressiveGeneration()
-    gen.fit(datasets, epochs=10, normalizer=None)
+    gen.fit(datasets, epochs=10, normalizer=normalize)
