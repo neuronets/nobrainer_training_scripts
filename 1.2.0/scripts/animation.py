@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 from pprint import pprint
 
+import imageio
 import imageio.v3 as iio
 import matplotlib.animation as animation
 import matplotlib.image as mpimg
@@ -23,8 +24,8 @@ def sort_key(item):
     return int(item.split("-")[-1])
 
 
-working_dir = "/om2/user/hgazula/nobrainer_training_scripts/output"
-experiment_name = "kwyk_test_2024_05_08_T0_50"
+working_dir = "/om2/user/hgazula/nobrainer_training_scripts/1.2.0/output/20240610"
+experiment_name = "kwyk_t0"
 
 print(f"Working directory: {working_dir}")
 print(f"Loading experiment: {experiment_name}")
@@ -91,6 +92,9 @@ for folder in folders:
 
 images = []
 for idx, filename in enumerate(frames):
+    if idx % 10 != 0:
+        continue
+
     print(Path(*Path(filename).parts[-2:]))
 
     i = Image.open(filename)
@@ -103,10 +107,12 @@ for idx, filename in enumerate(frames):
     images.append(i)
 
 images[0].save(
-    os.path.join(working_dir, experiment_name, f"{key}.gif"),
+    os.path.join(working_dir, experiment_name, f"kwyk_t0_{key}.gif"),
     save_all=True,
     append_images=images[1:],
     optimize=True,
     loop=0,
     duration=500,
 )
+
+# imageio.mimwrite("out.png", images, duration=4)
