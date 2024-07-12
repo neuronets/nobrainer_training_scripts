@@ -6,7 +6,7 @@
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 09:08:29
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-07-12 10:23:30
+# @Last Modified At: 2024-07-12 10:29:25
 # @Description:
 #   1. Code to train brainy (unet) on kwyk dataset.
 #   2. binary segmentation is used in this model.
@@ -27,7 +27,13 @@ from icecream import ic
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 import nobrainer
-from nobrainer.models import attention_unet, attention_unet_with_inception, unet, vnet
+from nobrainer.models import (
+    attention_unet,
+    attention_unet_with_inception,
+    unet,
+    unetr,
+    vnet,
+)
 from nobrainer.models.bayesian_meshnet import variational_meshnet
 from nobrainer.models.bayesian_vnet import bayesian_vnet
 from nobrainer.processing.segmentation import Segmentation
@@ -202,12 +208,23 @@ def att_unet_inception(*args, **kwargs):
     return model
 
 
-@train  # FIXME: works at full size but loss is flat 0.0
+@train  # FIXME: name conflict with GroupNormalization see issue #25
 def simple_vnet(*args, **kwargs):
     checkpoint_filepath = kwargs["checkpoint_filepath"]
 
     model = Segmentation.init_with_checkpoints(
         vnet,
+        checkpoint_filepath=checkpoint_filepath,
+    )
+    return model
+
+
+@train  # FIXME: works with 128^3 block, not full size
+def simple_unetr(*args, **kwargs):
+    checkpoint_filepath = kwargs["checkpoint_filepath"]
+
+    model = Segmentation.init_with_checkpoints(
+        unetr,
         checkpoint_filepath=checkpoint_filepath,
     )
     return model
@@ -222,5 +239,6 @@ if __name__ == "__main__":
         "attention_unet": att_unet,
         "attention_unet_with_inception": att_unet_inception,
         "vnet": simple_vnet,
+        "unetr": simple_unetr,
     }
     model_dict[args.model]()
