@@ -6,7 +6,7 @@
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-03-29 09:08:29
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-07-12 10:08:13
+# @Last Modified At: 2024-07-12 10:23:30
 # @Description:
 #   1. Code to train brainy (unet) on kwyk dataset.
 #   2. binary segmentation is used in this model.
@@ -27,7 +27,7 @@ from icecream import ic
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 import nobrainer
-from nobrainer.models import attention_unet, attention_unet_with_inception, unet
+from nobrainer.models import attention_unet, attention_unet_with_inception, unet, vnet
 from nobrainer.models.bayesian_meshnet import variational_meshnet
 from nobrainer.models.bayesian_vnet import bayesian_vnet
 from nobrainer.processing.segmentation import Segmentation
@@ -202,6 +202,17 @@ def att_unet_inception(*args, **kwargs):
     return model
 
 
+@train  # FIXME: works at full size but loss is flat 0.0
+def simple_vnet(*args, **kwargs):
+    checkpoint_filepath = kwargs["checkpoint_filepath"]
+
+    model = Segmentation.init_with_checkpoints(
+        vnet,
+        checkpoint_filepath=checkpoint_filepath,
+    )
+    return model
+
+
 if __name__ == "__main__":
     args = argument_parser()
     model_dict = {
@@ -210,5 +221,6 @@ if __name__ == "__main__":
         "bayes_vnet": bayes_vnet,
         "attention_unet": att_unet,
         "attention_unet_with_inception": att_unet_inception,
+        "vnet": simple_vnet,
     }
     model_dict[args.model]()
