@@ -1,18 +1,21 @@
 # Copyright (c) 2024 MIT
 #
 # -*- coding:utf-8 -*-
-# @Script: synthseg.py
+# @Script: synthseg_gen-1.py
 # @Author: Harsha
 # @Email: hvgazula@users.noreply.github.com
 # @Create At: 2024-06-19 12:57:53
 # @Last Modified By: Harsha
-# @Last Modified At: 2024-06-19 12:58:32
+# @Last Modified At: 2024-07-19 18:54:13
 # @Description: Synthseg generation in nobrainer.
 
 
-from nobrainer.processing.brain_generator import BrainGenerator
+import tensorflow as tf
 from nobrainer.ext.lab2im import utils
+from nobrainer.processing.brain_generator import BrainGenerator
 
+physical_devices = tf.config.list_physical_devices("GPU")
+tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 if __name__ == "__main__":
     # generate an image from the label map.
@@ -20,6 +23,7 @@ if __name__ == "__main__":
         "/net/vast-storage/scratch/vast/gablab/hgazula/nobrainer-data/datasets/sub-10_aparc+aseg.mgz",
         randomise_res=False,
     )
+
     im, lab = brain_generator.generate_brain()
 
     utils.save_volume(

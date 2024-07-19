@@ -2,15 +2,17 @@ import glob
 import os
 from argparse import ArgumentParser
 from pathlib import Path
-from pprint import pprint
 
-import imageio
-import imageio.v3 as iio
-import matplotlib.animation as animation
-import matplotlib.image as mpimg
-import matplotlib.pyplot as plt
-import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+
+# import imageio
+# import imageio.v3 as iio
+# import matplotlib.animation as animation
+# import matplotlib.image as mpimg
+# import matplotlib.pyplot as plt
+# import numpy as np
+# from pprint import pprint
+
 
 parser = ArgumentParser()
 parser.add_argument("--key", type=str, default="sagittal")
