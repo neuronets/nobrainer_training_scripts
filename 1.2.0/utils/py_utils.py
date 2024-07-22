@@ -1,7 +1,11 @@
 import collections.abc
 import csv
+import os
 import subprocess
 from datetime import datetime
+
+import GPUtil
+import psutil
 
 __all__ = [
     "main_timer",
@@ -9,6 +13,7 @@ __all__ = [
     "get_git_revision_hash",
     "get_git_revision_short_hash",
     "plot_tensor_slices",
+    "get_memory_usage",
 ]
 
 
@@ -100,3 +105,18 @@ def _read_csv(filepath, skip_header=True, delimiter=","):
         if skip_header:
             next(reader)
         return [tuple(row) for row in reader]
+
+
+def get_memory_usage():
+    # Get CPU memory usage
+    process = psutil.Process(os.getpid())
+    cpu_mem = process.memory_info().rss / 1024 / 1024  # in MB
+
+    # Get GPU memory usage
+    gpus = GPUtil.getGPUs()
+    gpu_mem = 0
+    if gpus:
+        gpu = gpus[0]  # Assuming you're using the first GPU
+        gpu_mem = gpu.memoryUsed
+
+    return cpu_mem, gpu_mem
